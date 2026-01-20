@@ -17,7 +17,8 @@
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noImplicitReturns": false,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "jsx": "react-jsx"
     },
     "include": [
         "src"
