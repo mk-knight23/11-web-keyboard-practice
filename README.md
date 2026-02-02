@@ -2,6 +2,9 @@
 
 ✨ Boost your typing productivity with this high-performance training application. Track your words-per-minute (WPM), accuracy, and speed in real-time with sophisticated visual feedback.
 
+## 🚀 Live Demo
+**[View Live on Vercel](https://11-web-keyboard-practice.vercel.app)**
+
 ## Features
 - 🏎️ Real-time WPM & Accuracy Tracking
 - 📊 Dynamic Performance Visualizations
