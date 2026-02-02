@@ -1,5 +1,5 @@
 {
-  "name": "10-typing-speed-trainer",
+  "name": "11-web-keyboard-practice",
   "private": false,
   "version": "2.1.0",
   "description": "Premium typing speed trainer modernized with React 19, Vite 6, and Tailwind CSS v4.",
@@ -25,9 +25,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mk-knight23/10-typing-speed-trainer.git"
+    "url": "git+https://github.com/mk-knight23/11-web-keyboard-practice.git"
   },
-  "homepage": "https://mk-knight23.github.io/10-typing-speed-trainer/",
+  "homepage": "https://mk-knight23.github.io/11-web-keyboard-practice/",
   "dependencies": {
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

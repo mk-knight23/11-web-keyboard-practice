@@ -1,4 +1,4 @@
-# 10-typing-speed-trainer
+# 11 Web Keyboard Practice
 
 ✨ Boost your typing productivity with this high-performance training application. Track your words-per-minute (WPM), accuracy, and speed in real-time with sophisticated visual feedback.
 
@@ -27,7 +27,7 @@ npm run dev
 - [Deployment Guide](docs/DEPLOY.md)
 
 ## Live Deployment
-- **GitHub Pages**: [https://mk-knight23.github.io/10-typing-speed-trainer/](https://mk-knight23.github.io/10-typing-speed-trainer/)
+- **GitHub Pages**: [https://mk-knight23.github.io/11-web-keyboard-practice/](https://mk-knight23.github.io/11-web-keyboard-practice/)
 - **Status**: 🟢 Live
 - **Modernized**: 2026-01-23
 
@@ -36,8 +36,8 @@ npm run dev
 
 ## 🌐 Live Deployments
 
-- Vercel: https://10-typing-speed-trainer.vercel.app
-- GitHub Pages: https://mk-knight23.github.io/10-typing-speed-trainer/
+- Vercel: https://11-web-keyboard-practice.vercel.app
+- GitHub Pages: https://mk-knight23.github.io/11-web-keyboard-practice/
 
 Status: 🟢 Deployments Live  
 Last Updated: 2026-01-23
