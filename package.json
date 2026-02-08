@@ -1,0 +1,39 @@
+{
+  "name": "keyboard-practice-pro",
+  "version": "2.0.0",
+  "description": "A modern, feature-rich typing practice application to improve your typing speed and accuracy",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -p 3000",
+    "build": "echo 'No build step required - pure HTML/CSS/JS'",
+    "test": "echo 'Testing not configured'",
+    "lint": "echo 'Linting not configured'"
+  },
+  "keywords": [
+    "typing",
+    "practice",
+    "keyboard",
+    "wpm",
+    "speed-test",
+    "accuracy",
+    "game",
+    "educational",
+    "productivity"
+  ],
+  "author": "MK",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mk-knight23/keyboard-practice-pro"
+  },
+  "browserslist": [
+    ">= 0.5%",
+    "last 2 versions",
+    "not dead",
+    "Chrome >= 90",
+    "Firefox >= 88",
+    "Safari >= 14",
+    "Edge >= 90"
+  ]
+}

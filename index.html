@@ -2,123 +2,1312 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Typing Speed Test</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Keyboard Practice Pro - Improve your typing speed and accuracy with interactive tests">
+  <meta name="keywords" content="typing, practice, speed test, keyboard, wpm">
+  <title>Keyboard Practice Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* CSS reset and styles */
-    * {
+    /* CSS Variables */
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --secondary: #14B8A6;
+      --cta: #F97316;
+      --cta-dark: #EA580C;
+      --bg-light: #F0FDFA;
+      --bg-white: #FFFFFF;
+      --text-primary: #134E4A;
+      --text-secondary: #57606F;
+      --text-muted: #8C96A3;
+      --border: #CBD5E1;
+      --success: #10B981;
+      --error: #EF4444;
+      --warning: #F59E0B;
+    }
+
+    /* Dark mode variables */
+    [data-theme="dark"] {
+      --primary: #14B8A6;
+      --primary-dark: #0D9488;
+      --secondary: #2DD4BF;
+      --cta: #FB923C;
+      --cta-dark: #F97316;
+      --bg-light: #0F172A;
+      --bg-white: #1E293B;
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --border: #334155;
+      --success: #22C55E;
+      --error: #F87171;
+      --warning: #FBBF24;
+    }
+
+    /* Reset & Base */
+    *, *::before, *::after {
       margin: 0;
       padding: 0;
-      box-sizing: border-box; 
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-white) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
+    /* Focus styles for accessibility */
+    :focus-visible {
+      outline: 3px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* Container */
     .container {
-      max-width: 600px;
-      margin: 20px auto;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 40px 20px;
+      animation: fadeInDown 0.5s ease;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     h1 {
-      background: #2980b9;
-      color: white;
-      padding: 20px;
-      text-align: center; 
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
     }
 
-    textarea {
-      width: 100%;
-      padding: 12px 20px;
-      box-sizing: border-box;
-      border: 2px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-      resize: none;
+    .subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-weight: 400;
     }
 
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 4px;
-      background-color: #4CAF50;
-      color: white;
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-white);
+      color: var(--text-primary);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 100;
     }
 
-    #message {
-      margin: 10px 0 20px;
+    .theme-toggle:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Stats Panel */
+    .stats-panel {
+      background: var(--bg-white);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      animation: fadeIn 0.5s ease 0.1s both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .stat-item {
       text-align: center;
+      padding: 16px;
+      background: var(--bg-light);
+      border-radius: 12px;
+      transition: transform 0.2s ease;
     }
 
-  </style>
+    .stat-item:hover {
+      transform: translateY(-2px);
+    }
 
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    /* Game Area */
+    .game-area {
+      background: var(--bg-white);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.5s ease 0.2s both;
+    }
+
+    /* Settings Bar */
+    .settings-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .setting-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, .btn-option {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-light);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    select:hover, .btn-option:hover {
+      border-color: var(--primary);
+    }
+
+    select:focus, .btn-option:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    }
+
+    .btn-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-option.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Word Display */
+    .word-display {
+      font-size: 2rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 40px 20px;
+      margin-bottom: 24px;
+      background: var(--bg-light);
+      border-radius: 12px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .word-display::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .word-display.correct::before {
+      opacity: 0.1;
+    }
+
+    .word-display.correct {
+      border: 2px solid var(--success);
+    }
+
+    .word-display.incorrect {
+      border: 2px solid var(--error);
+    }
+
+    .word-text {
+      position: relative;
+      z-index: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .char {
+      display: inline-block;
+      transition: color 0.15s ease;
+    }
+
+    .char.correct {
+      color: var(--success);
+    }
+
+    .char.incorrect {
+      color: var(--error);
+      text-decoration: underline;
+    }
+
+    .char.current {
+      background: var(--primary);
+      color: white;
+      border-radius: 2px;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* Input Area */
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    #wordInput {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 1.125rem;
+      font-family: 'Inter', monospace;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-white);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    #wordInput:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+    }
+
+    #wordInput:disabled {
+      background: var(--bg-light);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+    }
+
+    .btn-cta {
+      background: var(--cta);
+      color: white;
+    }
+
+    .btn-cta:hover:not(:disabled) {
+      background: var(--cta-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-light);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--border);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Message Area */
+    #message {
+      text-align: center;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    #message.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    #message.success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    #message.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid var(--error);
+    }
+
+    #message.info {
+      background: rgba(13, 148, 136, 0.1);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    /* Timer Display */
+    .timer-display {
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .timer-display.show {
+      display: block;
+    }
+
+    .timer-display.warning {
+      color: var(--warning);
+      animation: pulse 0.5s infinite;
+    }
+
+    /* Results Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal {
+      background: var(--bg-white);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.75rem;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .modal-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .modal-stat {
+      text-align: center;
+      padding: 20px;
+      background: var(--bg-light);
+      border-radius: 12px;
+    }
+
+    .modal-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+    }
+
+    .modal-stat-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* History Section */
+    .history-section {
+      margin-top: 32px;
+      animation: fadeIn 0.5s ease 0.3s both;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .history-header h3 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+
+    .history-list {
+      background: var(--bg-white);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr auto;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      font-size: 0.875rem;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-item:hover {
+      background: var(--bg-light);
+    }
+
+    .history-label {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+      padding: 12px 20px;
+      background: var(--bg-light);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 640px) {
+      .container {
+        padding: 12px;
+      }
+
+      header {
+        padding: 24px 12px;
+      }
+
+      .game-area {
+        padding: 20px;
+      }
+
+      .word-display {
+        font-size: 1.5rem;
+        padding: 24px 12px;
+        min-height: 100px;
+      }
+
+      .stats-panel {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .stat-item {
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .modal {
+        padding: 24px;
+      }
+
+      .history-item {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .history-item > *:nth-child(n+3) {
+        display: none;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      .theme-toggle,
+      .btn,
+      .settings-bar,
+      #wordInput {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: none;">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+    </svg>
+  </button>
 
   <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>Keyboard Practice Pro</h1>
+      <p class="subtitle">Improve your typing speed and accuracy</p>
+    </header>
 
-    <h1>Typing Speed Test</h1>
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+      <div class="stat-item">
+        <span class="stat-value" id="statWPM">0</span>
+        <span class="stat-label">WPM</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statAccuracy">100%</span>
+        <span class="stat-label">Accuracy</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statTests">0</span>
+        <span class="stat-label">Tests</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statBest">0</span>
+        <span class="stat-label">Best WPM</span>
+      </div>
+    </div>
 
-    <p id="message"></p>
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Settings Bar -->
+      <div class="settings-bar">
+        <div class="setting-group">
+          <label class="setting-label" for="difficulty">Difficulty</label>
+          <select id="difficulty" aria-label="Select difficulty level">
+            <option value="easy">Easy (Common words)</option>
+            <option value="medium" selected>Medium (Mixed)</option>
+            <option value="hard">Hard (Complex)</option>
+          </select>
+        </div>
 
-    <textarea id="words" rows="8" cols="40" disabled></textarea>
+        <div class="setting-group">
+          <label class="setting-label">Mode</label>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-option active" data-mode="word" aria-label="Word mode">Words</button>
+            <button class="btn-option" data-mode="time" aria-label="Timed mode">Timer</button>
+          </div>
+        </div>
 
-    <button id="start">Start Test</button>
+        <div class="setting-group" id="timerGroup" style="display: none;">
+          <label class="setting-label" for="timerDuration">Duration</label>
+          <select id="timerDuration" aria-label="Select timer duration">
+            <option value="30">30 seconds</option>
+            <option value="60" selected>60 seconds</option>
+            <option value="120">120 seconds</option>
+          </select>
+        </div>
+      </div>
 
+      <!-- Timer Display -->
+      <div class="timer-display" id="timerDisplay">Time: <span id="timerValue">60</span>s</div>
+
+      <!-- Message -->
+      <div id="message" role="alert" aria-live="polite"></div>
+
+      <!-- Word Display -->
+      <div class="word-display" id="wordDisplay" aria-label="Word to type">
+        <span class="word-text" id="wordText">Press Start to begin</span>
+      </div>
+
+      <!-- Input -->
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="wordInput"
+          placeholder="Type the word here..."
+          aria-label="Type the displayed word"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          disabled
+        >
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-group">
+        <button class="btn btn-primary" id="startBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Start Test
+        </button>
+        <button class="btn btn-secondary" id="resetBtn" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Reset
+        </button>
+        <button class="btn btn-cta" id="historyBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          View History
+        </button>
+      </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="history-section" id="historySection" style="display: none;">
+      <div class="history-header">
+        <h3>Test History</h3>
+        <button class="btn btn-secondary" id="clearHistoryBtn" style="padding: 8px 16px; font-size: 0.875rem;">
+          Clear All
+        </button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-item">
+          <span class="history-label">Date</span>
+          <span class="history-label">WPM</span>
+          <span class="history-label">Accuracy</span>
+          <span class="history-label">Mode</span>
+          <span class="history-label"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Modal -->
+  <div class="modal-overlay" id="resultsModal">
+    <div class="modal" role="dialog" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 id="modalTitle">Test Complete!</h2>
+        <p style="color: var(--text-secondary);">Great job! Here are your results:</p>
+      </div>
+      <div class="modal-stats">
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modalWPM">0</span>
+          <span class="modal-stat-label">Words Per Minute</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modalAccuracy">0%</span>
+          <span class="modal-stat-label">Accuracy</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modalTime">0s</span>
+          <span class="modal-stat-label">Time</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modalErrors">0</span>
+          <span class="modal-stat-label">Errors</span>
+        </div>
+      </div>
+      <div class="btn-group" style="justify-content: center;">
+        <button class="btn btn-primary" id="modalCloseBtn">Close</button>
+        <button class="btn btn-cta" id="modalRestartBtn">Try Again</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const words = [
-      "Hello", 
-      "Welcome",
-      "to",
-      "the", 
-      "typing",
-      "speed",
-      "test"
-    ];
+    // Word Banks by Difficulty
+    const wordBanks = {
+      easy: [
+        "the", "be", "to", "of", "and", "a", "in", "that", "have", "it",
+        "for", "not", "on", "with", "he", "as", "you", "do", "at", "this",
+        "but", "his", "by", "from", "they", "we", "say", "her", "she", "or",
+        "an", "will", "my", "one", "all", "would", "there", "their", "what", "so",
+        "up", "out", "if", "about", "who", "get", "which", "go", "me", "when",
+        "make", "can", "like", "time", "no", "just", "him", "know", "take", "people",
+        "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
+        "then", "now", "look", "only", "come", "its", "over", "think", "also", "back",
+        "after", "use", "two", "how", "our", "work", "first", "well", "way", "even",
+        "new", "want", "because", "any", "these", "give", "day", "most", "us", "is"
+      ],
+      medium: [
+        "about", "above", "across", "after", "again", "against", "almost", "along", "already",
+        "also", "although", "always", "among", "another", "answer", "appear", "become", "before",
+        "begin", "behind", "believe", "between", "beyond", "both", "bring", "build", "business",
+        "call", "change", "child", "city", "close", "company", "consider", "continue", "country",
+        "course", "develop", "different", "during", "early", "enough", "every", "example", "experience",
+        "family", "follow", "general", "government", "great", "group", "happen", "history", "however",
+        "important", "include", "increase", "interest", "itself", "keep", "large", "later", "learn",
+        "leave", "letter", "level", "little", "local", "market", "member", "might", "million", "money",
+        "month", "morning", "mother", "movement", "national", "never", "number", "often", "order",
+        "others", "part", "party", "perhaps", "place", "point", "policy", "possible", "power", "present",
+        "president", "problem", "program", "provide", "public", "question", "rather", "really", "reason",
+        "result", "return", "right", "school", "second", "service", "several", "should", "since", "small",
+        "social", "something", "special", "start", "state", "still", "story", "student", "study", "system"
+      ],
+      hard: [
+        "abbreviation", "accommodate", "achievement", "acknowledge", "acquisition", "administrative",
+        "advertisement", "ambassador", "anaesthesia", "anecdotal", "anthropologist", "architecture",
+        "assassination", "bibliography", "bureaucratic", "catastrophe", "characteristic", "circumstance",
+        "classification", "collaboration", "commemorate", "communication", "comprehensive", "concentration",
+        "conceptualize", "conscientious", "consideration", "constitutional", "contemporary", "controversial",
+        "correspondence", "demonstration", "determination", "disappointment", "discrimination", "distinguish",
+        "electromagnetic", "embarrassment", "encyclopedia", "entrepreneur", "environmental", "establishment",
+        "exaggeration", "examination", "experimental", "extraordinary", "fascination", "fundamental",
+        "guaranteed", "hallucination", "hippopotamus", "humanitarian", "identification", "illustration",
+        "implementation", "inappropriate", "incomprehensible", "infrastructure", "interpretation",
+        "jurisdiction", "justification", "knowledgeable", "manufacturing", "mathematical", "microscopic",
+        "misunderstanding", "multiplication", "neurological", "notwithstanding", "observation", "opportunity",
+        "organization", "overwhelming", "parliamentary", "participation", "pharmaceutical", "phenomenon",
+        "philosophical", "photosynthesis", "postponement", "precipitation", "predominantly", "preliminary",
+        "preoccupation", "professional", "pronunciation", "psychological", "questionnaire", "reconnaissance",
+        "recommendation", "refrigerator", "rehabilitation", "reimbursement", "reminiscence", "representative",
+        "responsibility", "revolutionary", "sophisticated", "specification", "straightforward", "subsequently",
+        "technological", "telecommunication", "temperament", "theoretical", "therapeutic", "thermometer",
+        "tremendous", "unconscious", "understanding", "unemployment", "unfortunately", "vulnerability"
+      ]
+    };
 
-    const msgEl = document.querySelector("#message");
-    const wordsEl = document.querySelector("#words");
-    const startBtn = document.querySelector("#start");  
+    // State
+    let state = {
+      isRunning: false,
+      currentWord: "",
+      difficulty: "medium",
+      mode: "word",
+      timerDuration: 60,
+      timeLeft: 60,
+      startTime: null,
+      timerInterval: null,
+      wordsTyped: 0,
+      correctChars: 0,
+      totalChars: 0,
+      errors: 0,
+      history: JSON.parse(localStorage.getItem('typingHistory') || '[]'),
+      stats: JSON.parse(localStorage.getItem('typingStats') || '{"tests":0,"bestWPM":0}')
+    };
 
-    let startTime, endTime;
+    // DOM Elements
+    const elements = {
+      themeToggle: document.getElementById('themeToggle'),
+      sunIcon: document.getElementById('sunIcon'),
+      moonIcon: document.getElementById('moonIcon'),
+      statWPM: document.getElementById('statWPM'),
+      statAccuracy: document.getElementById('statAccuracy'),
+      statTests: document.getElementById('statTests'),
+      statBest: document.getElementById('statBest'),
+      difficulty: document.getElementById('difficulty'),
+      modeButtons: document.querySelectorAll('.btn-option[data-mode]'),
+      timerGroup: document.getElementById('timerGroup'),
+      timerDuration: document.getElementById('timerDuration'),
+      timerDisplay: document.getElementById('timerDisplay'),
+      timerValue: document.getElementById('timerValue'),
+      message: document.getElementById('message'),
+      wordDisplay: document.getElementById('wordDisplay'),
+      wordText: document.getElementById('wordText'),
+      wordInput: document.getElementById('wordInput'),
+      startBtn: document.getElementById('startBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      historyBtn: document.getElementById('historyBtn'),
+      historySection: document.getElementById('historySection'),
+      historyList: document.getElementById('historyList'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      resultsModal: document.getElementById('resultsModal'),
+      modalWPM: document.getElementById('modalWPM'),
+      modalAccuracy: document.getElementById('modalAccuracy'),
+      modalTime: document.getElementById('modalTime'),
+      modalErrors: document.getElementById('modalErrors'),
+      modalCloseBtn: document.getElementById('modalCloseBtn'),
+      modalRestartBtn: document.getElementById('modalRestartBtn')
+    };
 
-    startBtn.addEventListener("click", startTest);
+    // Theme Toggle
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
 
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      if (theme === 'dark') {
+        elements.sunIcon.style.display = 'block';
+        elements.moonIcon.style.display = 'none';
+      } else {
+        elements.sunIcon.style.display = 'none';
+        elements.moonIcon.style.display = 'block';
+      }
+    }
+
+    // Message Display
+    function showMessage(text, type = 'info') {
+      elements.message.textContent = text;
+      elements.message.className = `show ${type}`;
+      setTimeout(() => {
+        elements.message.className = '';
+      }, 3000);
+    }
+
+    // Get Random Word
+    function getRandomWord() {
+      const words = wordBanks[state.difficulty];
+      return words[Math.floor(Math.random() * words.length)];
+    }
+
+    // Display Word with Character Highlighting
+    function displayWord() {
+      const typed = elements.wordInput.value;
+      const target = state.currentWord;
+
+      let html = '';
+      for (let i = 0; i < target.length; i++) {
+        let charClass = 'char';
+        if (i < typed.length) {
+          charClass += typed[i] === target[i] ? ' correct' : ' incorrect';
+        }
+        if (i === typed.length) {
+          charClass += ' current';
+        }
+        html += `<span class="${charClass}">${target[i]}</span>`;
+      }
+
+      elements.wordText.innerHTML = html;
+
+      // Update display state
+      elements.wordDisplay.classList.remove('correct', 'incorrect');
+      if (typed === target) {
+        elements.wordDisplay.classList.add('correct');
+      } else if (typed.length > 0 && typed[0] !== target[0]) {
+        elements.wordDisplay.classList.add('incorrect');
+      }
+    }
+
+    // Start Test
     function startTest() {
-      const randomWord = words[Math.floor(Math.random() * words.length)];
-      msgEl.innerText = randomWord;
-      wordsEl.disabled = false;
-      wordsEl.value = "";
-      wordsEl.focus();
-      startTime = new Date().getTime();
+      state.isRunning = true;
+      state.currentWord = getRandomWord();
+      state.startTime = Date.now();
+      state.wordsTyped = 0;
+      state.correctChars = 0;
+      state.totalChars = 0;
+      state.errors = 0;
+
+      elements.wordText.textContent = state.currentWord;
+      elements.wordInput.disabled = false;
+      elements.wordInput.value = '';
+      elements.wordInput.focus();
+
+      elements.startBtn.disabled = true;
+      elements.resetBtn.disabled = false;
+      elements.difficulty.disabled = true;
+
+      elements.wordDisplay.classList.remove('correct', 'incorrect');
+
+      if (state.mode === 'time') {
+        state.timeLeft = state.timerDuration;
+        elements.timerDisplay.classList.add('show');
+        elements.timerValue.textContent = state.timeLeft;
+        startTimer();
+      }
+
+      showMessage('Start typing! Good luck!', 'info');
     }
 
+    // Timer Functions
+    function startTimer() {
+      state.timerInterval = setInterval(() => {
+        state.timeLeft--;
+        elements.timerValue.textContent = state.timeLeft;
+
+        if (state.timeLeft <= 10) {
+          elements.timerDisplay.classList.add('warning');
+        }
+
+        if (state.timeLeft <= 0) {
+          endTest();
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+      elements.timerDisplay.classList.remove('show', 'warning');
+    }
+
+    // End Test
     function endTest() {
-      endTime = new Date().getTime();
-      const totalTime = (endTime - startTime) / 1000;
-      const wordCount = wordsEl.value.split(" ").length; 
-      const speed = Math.round(wordCount / totalTime * 60);
+      state.isRunning = false;
+      stopTimer();
 
-      const msg = `You typed at ${speed} words per minute`;
-      
-      wordsEl.disabled = true;
-      startBtn.innerText = "Start";      
-      msgEl.innerText = msg;
+      const endTime = Date.now();
+      const timeElapsed = (endTime - state.startTime) / 1000;
+      const timeInMinutes = timeElapsed / 60;
+
+      const wpm = state.mode === 'word'
+        ? Math.round((state.wordsTyped / timeInMinutes))
+        : Math.round((state.correctChars / 5) / timeInMinutes);
+
+      const accuracy = state.totalChars > 0
+        ? Math.round((state.correctChars / state.totalChars) * 100)
+        : 0;
+
+      // Update stats
+      state.stats.tests++;
+      if (wpm > state.stats.bestWPM) {
+        state.stats.bestWPM = wpm;
+      }
+      localStorage.setItem('typingStats', JSON.stringify(state.stats));
+
+      // Save to history
+      const historyEntry = {
+        date: new Date().toISOString(),
+        wpm: wpm,
+        accuracy: accuracy,
+        time: Math.round(timeElapsed),
+        errors: state.errors,
+        mode: state.mode,
+        difficulty: state.difficulty
+      };
+      state.history.unshift(historyEntry);
+      if (state.history.length > 50) state.history.pop();
+      localStorage.setItem('typingHistory', JSON.stringify(state.history));
+
+      // Update UI
+      updateStatsDisplay();
+      renderHistory();
+
+      // Show modal
+      elements.modalWPM.textContent = wpm;
+      elements.modalAccuracy.textContent = accuracy + '%';
+      elements.modalTime.textContent = Math.round(timeElapsed) + 's';
+      elements.modalErrors.textContent = state.errors;
+      elements.resultsModal.classList.add('show');
+
+      // Reset for next test
+      elements.wordInput.disabled = true;
+      elements.startBtn.disabled = false;
+      elements.resetBtn.disabled = true;
+      elements.difficulty.disabled = false;
     }
 
-    wordsEl.addEventListener("input", () => {
-      const typedWord = wordsEl.value; 
-      if(typedWord === randomWord) {
-        endTest();
+    // Handle Input
+    function handleInput() {
+      const typed = elements.wordInput.value;
+      const target = state.currentWord;
+
+      state.totalChars++;
+
+      if (typed.length <= target.length) {
+        if (typed[typed.length - 1] === target[typed.length - 1]) {
+          state.correctChars++;
+        } else {
+          state.errors++;
+        }
+      }
+
+      displayWord();
+
+      // Check if word is complete
+      if (typed === target) {
+        state.wordsTyped++;
+        state.currentWord = getRandomWord();
+        elements.wordInput.value = '';
+        displayWord();
+      }
+    }
+
+    // Update Stats Display
+    function updateStatsDisplay() {
+      elements.statTests.textContent = state.stats.tests;
+      elements.statBest.textContent = state.stats.bestWPM;
+    }
+
+    // Render History
+    function renderHistory() {
+      if (state.history.length === 0) {
+        elements.historySection.style.display = 'none';
+        return;
+      }
+
+      elements.historySection.style.display = 'block';
+
+      const html = state.history.map((entry, index) => `
+        <div class="history-item">
+          <span>${new Date(entry.date).toLocaleDateString()}</span>
+          <span><strong>${entry.wpm}</strong></span>
+          <span>${entry.accuracy}%</span>
+          <span>${entry.mode === 'word' ? 'Words' : entry.time + 's'}</span>
+          <button onclick="deleteHistoryItem(${index})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);" aria-label="Delete entry">×</button>
+        </div>
+      `).join('');
+
+      elements.historyList.innerHTML = `
+        <div class="history-item">
+          <span class="history-label">Date</span>
+          <span class="history-label">WPM</span>
+          <span class="history-label">Accuracy</span>
+          <span class="history-label">Mode</span>
+          <span class="history-label"></span>
+        </div>
+        ${html}
+      `;
+    }
+
+    // Delete History Item
+    window.deleteHistoryItem = function(index) {
+      state.history.splice(index, 1);
+      localStorage.setItem('typingHistory', JSON.stringify(state.history));
+      renderHistory();
+      showMessage('Entry deleted', 'info');
+    };
+
+    // Clear History
+    function clearHistory() {
+      if (confirm('Are you sure you want to clear all history?')) {
+        state.history = [];
+        localStorage.removeItem('typingHistory');
+        renderHistory();
+        showMessage('History cleared', 'info');
+      }
+    }
+
+    // Reset Game
+    function resetGame() {
+      state.isRunning = false;
+      stopTimer();
+
+      elements.wordInput.disabled = true;
+      elements.wordInput.value = '';
+      elements.wordText.textContent = 'Press Start to begin';
+      elements.wordDisplay.classList.remove('correct', 'incorrect');
+
+      elements.startBtn.disabled = false;
+      elements.resetBtn.disabled = true;
+      elements.difficulty.disabled = false;
+
+      showMessage('Game reset. Ready to start again!', 'info');
+    }
+
+    // Event Listeners
+    elements.themeToggle.addEventListener('click', toggleTheme);
+
+    elements.difficulty.addEventListener('change', (e) => {
+      state.difficulty = e.target.value;
+    });
+
+    elements.modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        elements.modeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.mode = btn.dataset.mode;
+        elements.timerGroup.style.display = state.mode === 'time' ? 'flex' : 'none';
+      });
+    });
+
+    elements.timerDuration.addEventListener('change', (e) => {
+      state.timerDuration = parseInt(e.target.value);
+    });
+
+    elements.startBtn.addEventListener('click', startTest);
+    elements.resetBtn.addEventListener('click', resetGame);
+
+    elements.wordInput.addEventListener('input', handleInput);
+
+    elements.wordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (state.isRunning) {
+          state.wordsTyped++;
+          state.currentWord = getRandomWord();
+          elements.wordInput.value = '';
+          displayWord();
+        }
       }
     });
-  </script>
 
+    elements.historyBtn.addEventListener('click', () => {
+      renderHistory();
+      elements.historySection.style.display = elements.historySection.style.display === 'none' ? 'block' : 'none';
+    });
+
+    elements.clearHistoryBtn.addEventListener('click', clearHistory);
+
+    elements.modalCloseBtn.addEventListener('click', () => {
+      elements.resultsModal.classList.remove('show');
+    });
+
+    elements.modalRestartBtn.addEventListener('click', () => {
+      elements.resultsModal.classList.remove('show');
+      startTest();
+    });
+
+    elements.resultsModal.addEventListener('click', (e) => {
+      if (e.target === elements.resultsModal) {
+        elements.resultsModal.classList.remove('show');
+      }
+    });
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (elements.resultsModal.classList.contains('show')) {
+          elements.resultsModal.classList.remove('show');
+        }
+      }
+      // Space to start when not in input
+      if (e.key === ' ' && document.activeElement !== elements.wordInput && !elements.startBtn.disabled) {
+        e.preventDefault();
+        startTest();
+      }
+    });
+
+    // Initialize
+    initTheme();
+    updateStatsDisplay();
+    renderHistory();
+  </script>
 </body>
 </html>
