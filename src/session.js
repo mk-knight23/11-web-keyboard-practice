@@ -231,6 +231,7 @@ export function resetGame() {
   el.difficulty.disabled = false;
   // Move focus out of the now-disabled typing input to a sane, enabled target
   // so keyboard focus is never stranded after an abort/reset (WCAG 2.1.2).
-  if (el.startBtn && typeof el.startBtn.focus === 'function') el.startBtn.focus();
+  if (el.startBtn && typeof el.startBtn.focus === 'function')
+    el.startBtn.focus();
   showMessage('Game reset. Ready to start again!', 'info');
 }

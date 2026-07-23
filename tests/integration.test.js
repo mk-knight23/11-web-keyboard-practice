@@ -253,7 +253,11 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
     // Focus a control (the theme toggle): Space must NOT hijack activation.
     document.getElementById('themeToggle').focus();
     document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+      new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     expect(state.isRunning).toBe(false);
 
@@ -261,7 +265,11 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
     document.getElementById('themeToggle').blur();
     expect(document.activeElement).toBe(document.body);
     document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+      new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     expect(state.isRunning).toBe(true);
   });
