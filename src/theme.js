@@ -20,7 +20,9 @@ export function toggleTheme() {
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   if (!write(STORAGE_KEYS.THEME, next)) {
-    notifySaveFailure("Theme preference couldn't be saved — storage may be full");
+    notifySaveFailure(
+      "Theme preference couldn't be saved — storage may be full"
+    );
   }
   updateThemeIcon(next);
   track('theme_changed', { theme: next });

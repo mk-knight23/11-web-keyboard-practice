@@ -44,7 +44,9 @@ export function sanitizeHistoryEntry(raw) {
   // then validate against the real mode set; unknown modes fall back to 'time'.
   const candidateMode = raw.mode === 'timed' ? 'time' : raw.mode;
   const mode = ALLOWED_MODES.has(candidateMode) ? candidateMode : 'time';
-  const difficulty = ALLOWED_DIFFICULTIES.has(raw.difficulty) ? raw.difficulty : 'easy';
+  const difficulty = ALLOWED_DIFFICULTIES.has(raw.difficulty)
+    ? raw.difficulty
+    : 'easy';
   const entry = {
     date: date.toISOString(),
     wpm: toFiniteNumber(raw.wpm),
@@ -91,7 +93,12 @@ export function sanitizePerKey(raw) {
   const out = {};
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
   for (const [key, value] of Object.entries(raw)) {
-    if (typeof key !== 'string' || key.length === 0 || key.length > MAX_KEY_LABEL_LENGTH) continue;
+    if (
+      typeof key !== 'string' ||
+      key.length === 0 ||
+      key.length > MAX_KEY_LABEL_LENGTH
+    )
+      continue;
     if (!value || typeof value !== 'object') continue;
     const hits = Math.max(0, toFiniteNumber(value.hits));
     const misses = Math.max(0, toFiniteNumber(value.misses));

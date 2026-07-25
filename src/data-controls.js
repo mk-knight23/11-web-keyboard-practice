@@ -13,7 +13,11 @@ import {
   renderHistory,
 } from './history.js';
 import { renderHeatmap } from './heatmap.js';
-import { sanitizeHistoryEntry, sanitizeStats, sanitizePerKey } from './sanitize.js';
+import {
+  sanitizeHistoryEntry,
+  sanitizeStats,
+  sanitizePerKey,
+} from './sanitize.js';
 
 const EXPORT_VERSION = 1;
 
@@ -67,7 +71,10 @@ export function sanitizeImportPayload(payload) {
   }
   if (data.stats) clean.stats = sanitizeStats(data.stats);
   if (data.perKey) clean.perKey = sanitizePerKey(data.perKey);
-  if (typeof data.theme === 'string' && ['light', 'dark'].includes(data.theme)) {
+  if (
+    typeof data.theme === 'string' &&
+    ['light', 'dark'].includes(data.theme)
+  ) {
     clean.theme = data.theme;
   }
   return { version: payload.version, data: clean };

@@ -483,4 +483,3 @@ export function getWeakKeyWord(weakKeys, difficulty, rng = Math.random) {
   if (pool.length > 0 && rng() < WEAK_POOL_PROBABILITY) return pick(pool, rng);
   return pick(bank, rng);
 }
-
