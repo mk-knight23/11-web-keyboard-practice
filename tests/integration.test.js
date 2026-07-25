@@ -52,18 +52,27 @@ afterEach(() => {
 
 /**
  * Simulates one input event, advancing the clock and independently tracking
- * the counters with the ORIGINAL inline algorithm.
+ * the counters with the metrics-v2 first-strike algorithm: every position is
+ * scored once, on the first forward keystroke that reaches it; backspaces
+ * and retypes count nothing; overflow past the target end is an error.
  */
 function makeTyper(input, counters) {
+  let maxTyped = 0;
   return function dispatchValue(value, target) {
     vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    // Every dispatched event advances the clock, counted or not.
+    counters.events = (counters.events ?? 0) + 1;
     input.value = value;
-    counters.total++;
-    if (value.length <= target.length) {
-      if (value[value.length - 1] === target[value.length - 1])
-        counters.correct++;
-      else counters.errors++;
+    if (value.length > maxTyped) {
+      for (let i = maxTyped; i < value.length; i++) {
+        counters.total++;
+        if (i < target.length && value[i] === target[i]) counters.correct++;
+        else counters.errors++;
+      }
+      maxTyped = value.length;
     }
+    // Completing the word advances to the next text and resets the input.
+    if (value === target) maxTyped = 0;
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 }
@@ -91,7 +100,7 @@ describe('full app boot + word-mode session (parity with original)', () => {
     const modal = document.getElementById('resultsModal');
     expect(modal.classList.contains('show')).toBe(true);
 
-    const elapsedMin = (counters.total * MS_PER_KEYSTROKE) / 60000;
+    const elapsedMin = (counters.events * MS_PER_KEYSTROKE) / 60000;
     expect(document.getElementById('modalWPM').textContent).toBe(
       String(oldNetWpm(counters.correct, elapsedMin))
     );
@@ -110,16 +119,20 @@ describe('full app boot + word-mode session (parity with original)', () => {
     expect(storedHistory).toHaveLength(1);
     expect(storedHistory[0].wpm).toBe(oldNetWpm(counters.correct, elapsedMin));
     expect(storedHistory[0].mode).toBe('word');
+    expect(storedHistory[0].metricsVersion).toBe(2);
     const storedStats = JSON.parse(localStorage.getItem('typesprint:v1:stats'));
     expect(storedStats.tests).toBe(1);
     expect(storedStats.bestWPM).toBe(oldNetWpm(counters.correct, elapsedMin));
+    expect(storedStats.metricsVersion).toBe(2);
 
     // Every forward keystroke was recorded for the per-key stats.
     expect(state.keystrokes).toHaveLength(counters.total);
     expect(state.keystrokes.every((k) => k.correct)).toBe(true);
   });
 
-  it('tracks errors and backspaces exactly like the original algorithm', async () => {
+  // Updated for metrics v2: this test previously pinned the buggy legacy
+  // behavior (backspace counted as a correct char via undefined===undefined).
+  it('tracks errors and backspaces with v2 counting (corrections never inflate stats)', async () => {
     const { state } = await bootApp();
     const input = document.getElementById('wordInput');
     const counters = { total: 0, correct: 0, errors: 0 };
@@ -128,9 +141,11 @@ describe('full app boot + word-mode session (parity with original)', () => {
     document.getElementById('startBtn').click();
 
     // First word: one wrong first char, backspace, then type it correctly.
+    // v2: the wrong char keeps its error; the backspace and the corrected
+    // retype of position 0 count nothing.
     const first = state.currentWord;
-    type('x', first); // wrong char → error
-    type('', first); // backspace → original quirk counts correct
+    type('~', first); // wrong char → error (words never contain '~')
+    type('', first); // backspace → correction event, counts nothing
     for (let i = 1; i <= first.length; i++) type(first.slice(0, i), first);
 
     // Remaining 19 words typed cleanly.
@@ -140,7 +155,7 @@ describe('full app boot + word-mode session (parity with original)', () => {
     }
 
     expect(state.isRunning).toBe(false);
-    const elapsedMin = (counters.total * MS_PER_KEYSTROKE) / 60000;
+    const elapsedMin = (counters.events * MS_PER_KEYSTROKE) / 60000;
     expect(counters.errors).toBe(1);
     expect(document.getElementById('modalErrors').textContent).toBe('1');
     expect(document.getElementById('modalWPM').textContent).toBe(
@@ -181,6 +196,194 @@ describe('full app boot + word-mode session (parity with original)', () => {
     expect(
       document.getElementById('timerDisplay').classList.contains('show')
     ).toBe(false);
+  });
+});
+
+describe('metric integrity v2 — live session counting', () => {
+  /** Raw dispatcher: sets the input value and fires an input event. */
+  function makeDispatcher(input) {
+    return function dispatch(value) {
+      vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+  }
+
+  it('a type/backspace loop does not inflate totalChars, correctChars, or WPM', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const first = state.currentWord;
+
+    // Farm the first (correct) char: type it, backspace it, ten times over.
+    for (let n = 0; n < 10; n++) {
+      dispatch(first.slice(0, 1));
+      dispatch('');
+    }
+    dispatch(first.slice(0, 1));
+
+    // The first position must have been scored exactly once.
+    expect(state.totalChars).toBe(1);
+    expect(state.correctChars).toBe(1);
+    expect(state.errors).toBe(0);
+  });
+
+  it('a typed-then-corrected wrong char keeps its error and is not double-counted', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+
+    dispatch('~'); // guaranteed-wrong first char
+    dispatch(''); // backspace
+    dispatch(state.currentWord.slice(0, 1)); // corrected retype
+
+    expect(state.totalChars).toBe(1);
+    expect(state.correctChars).toBe(0);
+    expect(state.errors).toBe(1);
+  });
+
+  it('overflow typing past the passage end increments the Errors stat', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+
+    // Type the whole word except its last char, then two overflow chars
+    // beyond the passage end (word stays incomplete → no advance).
+    const stem = word.slice(0, word.length - 1);
+    for (let i = 1; i <= stem.length; i++) dispatch(stem.slice(0, i));
+    dispatch(stem + '~'); // wrong final char (words never contain '~')
+    dispatch(stem + '~z'); // overflow char past the passage end
+
+    expect(state.errors).toBe(2); // 1 wrong final char + 1 overflow char
+    expect(state.totalChars).toBe(word.length + 1);
+  });
+});
+
+describe('storage write failure surfacing', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows a non-blocking notice when results can't be persisted (quota exceeded)", async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+    document.getElementById('startBtn').click();
+
+    // Storage fills up mid-test: every subsequent write throws.
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError');
+    });
+
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+
+    // The flow completed anyway — the failure is non-blocking.
+    expect(state.isRunning).toBe(false);
+    expect(
+      document.getElementById('resultsModal').classList.contains('show')
+    ).toBe(true);
+
+    // And the user was told their results were not saved.
+    const message = document.getElementById('message');
+    expect(message.textContent).toBe(
+      "Results couldn't be saved — storage may be full"
+    );
+    expect(message.className).toContain('error');
+  });
+
+  it('shows a notice when the theme preference cannot be persisted', async () => {
+    await bootApp();
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError');
+    });
+
+    document.getElementById('themeToggle').click();
+
+    // The toggle still applied visually (non-blocking)…
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    // …but the user was told it will not survive a reload.
+    expect(document.getElementById('message').textContent).toBe(
+      "Theme preference couldn't be saved — storage may be full"
+    );
+  });
+});
+
+describe('IME composition guard (metrics v2)', () => {
+  function setValueAndInput(input, value) {
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  it('ignores intermediate composition updates and scores the committed string once', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    // Intermediate composition updates fire input events with provisional text.
+    setValueAndInput(input, 'ち');
+    setValueAndInput(input, 'ちゃ');
+    expect(state.totalChars).toBe(0);
+    expect(state.correctChars).toBe(0);
+    expect(state.errors).toBe(0);
+
+    // Commit: the provisional text is replaced by the committed string.
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.totalChars).toBe(committed.length);
+    expect(state.correctChars).toBe(committed.length);
+    expect(state.errors).toBe(0);
+  });
+
+  it('a trailing input event after compositionend cannot double-count (browser ordering)', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    setValueAndInput(input, 'ち');
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+    // Safari fires the final input event AFTER compositionend.
+    setValueAndInput(input, committed);
+
+    expect(state.totalChars).toBe(committed.length);
+    expect(state.correctChars).toBe(committed.length);
+  });
+
+  it('a composition that commits the whole word completes the word', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    setValueAndInput(input, 'ち');
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = word;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.wordsTyped).toBe(1);
+    expect(state.totalChars).toBe(word.length);
+    expect(state.correctChars).toBe(word.length);
+    expect(input.value).toBe(''); // advanced to the next text
   });
 });
 
@@ -253,7 +456,11 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
     // Focus a control (the theme toggle): Space must NOT hijack activation.
     document.getElementById('themeToggle').focus();
     document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+      new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     expect(state.isRunning).toBe(false);
 
@@ -261,7 +468,11 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
     document.getElementById('themeToggle').blur();
     expect(document.activeElement).toBe(document.body);
     document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+      new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     expect(state.isRunning).toBe(true);
   });
@@ -306,13 +517,17 @@ describe('boot-time migration and rendering', () => {
 
     await bootApp();
 
-    // Namespaced copies exist.
+    // Namespaced copies exist. Pre-v2 bestWPM is archived (metrics v2):
+    // the legacy value was measured with inflated counting, so it is kept
+    // as legacyBestWPM and the active personal best restarts fresh.
     expect(JSON.parse(localStorage.getItem('typesprint:v1:history'))).toEqual([
       legacyEntry,
     ]);
     expect(JSON.parse(localStorage.getItem('typesprint:v1:stats'))).toEqual({
       tests: 7,
-      bestWPM: 64,
+      bestWPM: 0,
+      legacyBestWPM: 64,
+      metricsVersion: 2,
     });
     expect(JSON.parse(localStorage.getItem('typesprint:v1:theme'))).toBe(
       'dark'
@@ -320,7 +535,7 @@ describe('boot-time migration and rendering', () => {
 
     // And they drive the UI: stats panel, history list, theme attribute.
     expect(document.getElementById('statTests').textContent).toBe('7');
-    expect(document.getElementById('statBest').textContent).toBe('64');
+    expect(document.getElementById('statBest').textContent).toBe('0');
     expect(
       document.getElementById('historySection').classList.contains('show')
     ).toBe(true);
@@ -504,6 +719,9 @@ describe('progress dashboard (feature 5)', () => {
     const values = [...dash.querySelectorAll('.dash-value')].map(
       (n) => n.textContent
     );
-    expect(values).toEqual(['70', '96%', '3', '3']); // best WPM, best acc, tests, minutes
+    // Best WPM is the ACTIVE personal best: the seeded stats are pre-v2, so
+    // the inflated 70 is archived as legacyBestWPM and the active best is 0
+    // until a metrics-v2 result lands (see docs/v3/METRICS_V2.md).
+    expect(values).toEqual(['0', '96%', '3', '3']); // best WPM, best acc, tests, minutes
   });
 });

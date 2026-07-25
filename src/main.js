@@ -10,6 +10,8 @@ import {
   resetGame,
   handleInput,
   handleWordInputKeydown,
+  handleCompositionStart,
+  handleCompositionEnd,
   setTestEndHandler,
   setNextTextProvider,
   isTimedMode,
@@ -106,6 +108,10 @@ el.startBtn.addEventListener('click', startTest);
 el.resetBtn.addEventListener('click', resetGame);
 el.wordInput.addEventListener('input', handleInput);
 el.wordInput.addEventListener('keydown', handleWordInputKeydown);
+// IME guard: intermediate composition input is provisional; the committed
+// string is counted once on compositionend (metrics v2).
+el.wordInput.addEventListener('compositionstart', handleCompositionStart);
+el.wordInput.addEventListener('compositionend', handleCompositionEnd);
 
 el.historyBtn.addEventListener('click', () => {
   renderHistory();

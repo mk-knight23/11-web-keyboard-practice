@@ -5,6 +5,7 @@
 import { el } from './ui.js';
 import { track } from './analytics.js';
 import { read, write, STORAGE_KEYS } from './lib/storage.js';
+import { notifySaveFailure } from './history.js';
 
 export function initTheme() {
   const saved = read(STORAGE_KEYS.THEME, null);
@@ -18,7 +19,11 @@ export function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  write(STORAGE_KEYS.THEME, next);
+  if (!write(STORAGE_KEYS.THEME, next)) {
+    notifySaveFailure(
+      "Theme preference couldn't be saved — storage may be full"
+    );
+  }
   updateThemeIcon(next);
   track('theme_changed', { theme: next });
 }

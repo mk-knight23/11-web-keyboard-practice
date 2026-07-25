@@ -81,20 +81,33 @@ describe('migrateLegacyData', () => {
   });
 });
 
+const DEFAULT_V2_STATS = {
+  tests: 0,
+  bestWPM: 0,
+  legacyBestWPM: 0,
+  metricsVersion: 2,
+};
+
 describe('loadPersistedData', () => {
-  it('loads migrated history and stats into module state', () => {
+  it('loads migrated history and archives pre-v2 stats', () => {
     localStorage.setItem(LEGACY_KEYS.HISTORY, JSON.stringify(SAMPLE_HISTORY));
     localStorage.setItem(LEGACY_KEYS.STATS, JSON.stringify(SAMPLE_STATS));
     migrateLegacyData();
     loadPersistedData();
     expect(getHistory()).toEqual(SAMPLE_HISTORY);
-    expect(getStats()).toEqual(SAMPLE_STATS);
+    // Pre-v2 bestWPM was measured with inflated counting → archived.
+    expect(getStats()).toEqual({
+      tests: 12,
+      bestWPM: 0,
+      legacyBestWPM: 84,
+      metricsVersion: 2,
+    });
   });
 
   it('falls back to defaults when nothing is stored', () => {
     loadPersistedData();
     expect(getHistory()).toEqual([]);
-    expect(getStats()).toEqual({ tests: 0, bestWPM: 0 });
+    expect(getStats()).toEqual(DEFAULT_V2_STATS);
   });
 
   it('falls back to defaults for corrupt stored shapes', () => {
@@ -108,6 +121,60 @@ describe('loadPersistedData', () => {
     );
     loadPersistedData();
     expect(getHistory()).toEqual([]);
-    expect(getStats()).toEqual({ tests: 0, bestWPM: 0 });
+    expect(getStats()).toEqual(DEFAULT_V2_STATS);
+  });
+});
+
+describe('metrics v2 stats migration (legacy personal best archival)', () => {
+  it('archives an inflated pre-v2 bestWPM as legacyBestWPM, active best starts fresh', () => {
+    localStorage.setItem(
+      'typesprint:v1:' + STORAGE_KEYS.STATS,
+      JSON.stringify({ tests: 12, bestWPM: 84 })
+    );
+    loadPersistedData();
+    expect(getStats()).toEqual({
+      tests: 12,
+      bestWPM: 0,
+      legacyBestWPM: 84,
+      metricsVersion: 2,
+    });
+  });
+
+  it('persists the migrated shape back to storage (one-time, stable across reloads)', () => {
+    localStorage.setItem(
+      'typesprint:v1:' + STORAGE_KEYS.STATS,
+      JSON.stringify({ tests: 12, bestWPM: 84 })
+    );
+    loadPersistedData();
+    expect(read(STORAGE_KEYS.STATS, null)).toEqual({
+      tests: 12,
+      bestWPM: 0,
+      legacyBestWPM: 84,
+      metricsVersion: 2,
+    });
+    // Second load: already v2, nothing changes.
+    loadPersistedData();
+    expect(getStats().legacyBestWPM).toBe(84);
+    expect(getStats().bestWPM).toBe(0);
+  });
+
+  it('leaves metricsVersion-2 stats untouched (no double archival)', () => {
+    const v2 = { tests: 3, bestWPM: 41, legacyBestWPM: 84, metricsVersion: 2 };
+    localStorage.setItem(
+      'typesprint:v1:' + STORAGE_KEYS.STATS,
+      JSON.stringify(v2)
+    );
+    loadPersistedData();
+    expect(getStats()).toEqual(v2);
+  });
+
+  it('keeps the larger archive when re-importing pre-v2 stats over an existing archive', () => {
+    localStorage.setItem(
+      'typesprint:v1:' + STORAGE_KEYS.STATS,
+      JSON.stringify({ tests: 5, bestWPM: 60, legacyBestWPM: 90 })
+    );
+    loadPersistedData();
+    expect(getStats().legacyBestWPM).toBe(90);
+    expect(getStats().bestWPM).toBe(0);
   });
 });

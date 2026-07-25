@@ -27,7 +27,12 @@ export function isEditableTarget(element) {
  * @param {{ key: string, activeElement: Element | null, body: Element, startDisabled: boolean }} args
  * @returns {boolean}
  */
-export function shouldStartOnSpace({ key, activeElement, body, startDisabled }) {
+export function shouldStartOnSpace({
+  key,
+  activeElement,
+  body,
+  startDisabled,
+}) {
   return key === ' ' && activeElement === body && !startDisabled;
 }
 

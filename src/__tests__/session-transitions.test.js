@@ -6,14 +6,18 @@ import {
   WORD_MODE_TARGET,
 } from '../session.js';
 
-describe('computeInputDelta — parity with original inline logic', () => {
+describe('computeInputDelta — single forward keystrokes (metrics v2)', () => {
+  // These tests previously pinned the buggy legacy counting for parity with
+  // the original inline script. Updated for metrics v2: the bug they pinned
+  // (backspaces counted as correct chars) is now fixed — see the v2 describe
+  // block below for the correction/overflow specification.
   it('counts a correct char', () => {
-    expect(computeInputDelta('c', 'cat')).toEqual({
+    expect(computeInputDelta('c', 'cat', 0)).toEqual({
       totalChars: 1,
       correctChars: 1,
       errors: 0,
     });
-    expect(computeInputDelta('cat', 'cat')).toEqual({
+    expect(computeInputDelta('cat', 'cat', 2)).toEqual({
       totalChars: 1,
       correctChars: 1,
       errors: 0,
@@ -21,32 +25,101 @@ describe('computeInputDelta — parity with original inline logic', () => {
   });
 
   it('counts a wrong char as an error', () => {
-    expect(computeInputDelta('x', 'cat')).toEqual({
+    expect(computeInputDelta('x', 'cat', 0)).toEqual({
       totalChars: 1,
       correctChars: 0,
       errors: 1,
     });
-    expect(computeInputDelta('cx', 'cat')).toEqual({
+    expect(computeInputDelta('cx', 'cat', 1)).toEqual({
       totalChars: 1,
       correctChars: 0,
       errors: 1,
     });
   });
 
-  it('counts only totalChars when typed is longer than the target', () => {
-    expect(computeInputDelta('cats', 'cat')).toEqual({
+  it('counts typing past the target end as an error (was: uncounted accuracy sink)', () => {
+    expect(computeInputDelta('cats', 'cat', 3)).toEqual({
       totalChars: 1,
+      correctChars: 0,
+      errors: 1,
+    });
+  });
+
+  it('never counts an empty input as a correct char (was: undefined === undefined quirk)', () => {
+    expect(computeInputDelta('', 'cat', 1)).toEqual({
+      totalChars: 0,
       correctChars: 0,
       errors: 0,
     });
   });
+});
 
-  it('preserves the original quirk: empty typed counts as correct', () => {
-    // Original: typed[-1] === target[-1] → undefined === undefined → correct.
-    expect(computeInputDelta('', 'cat')).toEqual({
+describe('computeInputDelta v2 — corrections and overflow (metric integrity)', () => {
+  const NO_DELTA = { totalChars: 0, correctChars: 0, errors: 0 };
+
+  it('does not count a backspace as a typed or correct char', () => {
+    // typed shrank from 3 chars to 2 — a correction event, not a keystroke.
+    expect(computeInputDelta('ca', 'cat', 3)).toEqual(NO_DELTA);
+  });
+
+  it('does not count clearing the input as correct (kills the undefined === undefined quirk)', () => {
+    expect(computeInputDelta('', 'cat', 1)).toEqual(NO_DELTA);
+  });
+
+  it('scores fresh forward positions exactly once', () => {
+    expect(computeInputDelta('c', 'cat', 0)).toEqual({
       totalChars: 1,
       correctChars: 1,
       errors: 0,
+    });
+    expect(computeInputDelta('cx', 'cat', 1)).toEqual({
+      totalChars: 1,
+      correctChars: 0,
+      errors: 1,
+    });
+  });
+
+  it('does not re-score a retyped position after a correction (no WPM farming)', () => {
+    // Position 0 was already scored before the backspace (maxTypedLength 1).
+    expect(computeInputDelta('c', 'cat', 1)).toEqual(NO_DELTA);
+  });
+
+  it('keeps the original error when a wrong char is typed then corrected (no accuracy inflation)', () => {
+    // Sequence: 'x' (wrong), backspace, 'c' (retype of the same position).
+    const deltas = [
+      computeInputDelta('x', 'cat', 0),
+      computeInputDelta('', 'cat', 1),
+      computeInputDelta('c', 'cat', 1),
+    ];
+    const sum = deltas.reduce(
+      (acc, d) => ({
+        totalChars: acc.totalChars + d.totalChars,
+        correctChars: acc.correctChars + d.correctChars,
+        errors: acc.errors + d.errors,
+      }),
+      { ...NO_DELTA }
+    );
+    expect(sum).toEqual({ totalChars: 1, correctChars: 0, errors: 1 });
+  });
+
+  it('counts overflow typing past the passage end as an error', () => {
+    expect(computeInputDelta('cats', 'cat', 3)).toEqual({
+      totalChars: 1,
+      correctChars: 0,
+      errors: 1,
+    });
+  });
+
+  it('scores multi-char forward jumps (paste / IME commit) once per position', () => {
+    expect(computeInputDelta('cat', 'cat', 0)).toEqual({
+      totalChars: 3,
+      correctChars: 3,
+      errors: 0,
+    });
+    expect(computeInputDelta('cxt', 'cat', 0)).toEqual({
+      totalChars: 3,
+      correctChars: 2,
+      errors: 1,
     });
   });
 });
