@@ -29,7 +29,7 @@ describe('sanitizeHistoryEntry', () => {
       accuracy: 97,
       time: 60,
       errors: 3,
-      mode: 'timed',
+      mode: 'time',
       difficulty: 'medium',
     });
     expect(entry).toEqual({
@@ -39,9 +39,19 @@ describe('sanitizeHistoryEntry', () => {
       accuracy: 97,
       time: 60,
       errors: 3,
-      mode: 'timed',
+      mode: 'time',
       difficulty: 'medium',
     });
+  });
+  it("accepts every real app mode unchanged ('time' was previously corrupted)", () => {
+    for (const mode of ['time', 'word', 'code', 'quotes', 'weak']) {
+      expect(sanitizeHistoryEntry({ date: '2026-07-22', mode }).mode).toBe(mode);
+    }
+  });
+  it("canonicalizes legacy-corrupted 'timed' entries back to 'time'", () => {
+    // Old exports were already corrupted: the previous allowlist rejected
+    // the app's real 'time' mode and rewrote it to 'timed' on import.
+    expect(sanitizeHistoryEntry({ date: '2026-07-22', mode: 'timed' }).mode).toBe('time');
   });
   it('neutralizes an XSS payload in mode', () => {
     const entry = sanitizeHistoryEntry({
@@ -49,7 +59,10 @@ describe('sanitizeHistoryEntry', () => {
       wpm: 10,
       mode: '<img src=x onerror=alert(1)>',
     });
-    expect(entry.mode).toBe('timed');
+    expect(entry.mode).toBe('time');
+  });
+  it("falls back to 'time' for unknown modes (no phantom 'zen' mode)", () => {
+    expect(sanitizeHistoryEntry({ date: '2026-07-22', mode: 'zen' }).mode).toBe('time');
   });
   it('coerces string numbers and clamps accuracy', () => {
     const entry = sanitizeHistoryEntry({ date: '2026-07-22', wpm: '55', accuracy: '250' });
@@ -132,11 +145,59 @@ describe('sanitizeImportPayload end-to-end', () => {
     };
     const clean = sanitizeImportPayload(malicious);
     expect(clean.data.history).toHaveLength(1);
-    expect(clean.data.history[0].mode).toBe('timed');
+    expect(clean.data.history[0].mode).toBe('time');
     expect(clean.data.stats).toEqual({ tests: 3, bestWPM: 0, legacyBestWPM: 0 });
     expect(Object.keys(clean.data.perKey)).toEqual(['t']);
     expect(clean.data.theme).toBeUndefined();
     expect(clean.data.extraneous).toBeUndefined();
+  });
+
+  it('round-trips a real app export without corrupting modes', () => {
+    const entry = (mode) => ({
+      date: '2026-07-22T10:00:00.000Z',
+      wpm: 50,
+      rawWPM: 55,
+      accuracy: 92,
+      time: 60,
+      errors: 4,
+      mode,
+      difficulty: 'medium',
+      metricsVersion: 2,
+    });
+    const exported = {
+      version: 1,
+      data: { history: [entry('time'), entry('word'), entry('weak')] },
+    };
+    const clean = sanitizeImportPayload(exported);
+    expect(clean.data.history.map((e) => e.mode)).toEqual([
+      'time',
+      'word',
+      'weak',
+    ]);
+    // Byte-identical round-trip: nothing else was rewritten.
+    expect(clean.data.history[0]).toEqual(entry('time'));
+  });
+
+  it("repairs a legacy-corrupted export ('timed' written by the old allowlist)", () => {
+    const corrupted = {
+      version: 1,
+      data: {
+        history: [
+          {
+            date: '2026-06-01T09:00:00.000Z',
+            wpm: 44,
+            rawWPM: 48,
+            accuracy: 90,
+            time: 60,
+            errors: 5,
+            mode: 'timed', // old sanitizer rewrote the app's 'time' to this
+            difficulty: 'easy',
+          },
+        ],
+      },
+    };
+    const clean = sanitizeImportPayload(corrupted);
+    expect(clean.data.history[0].mode).toBe('time');
   });
 });
 

@@ -16,7 +16,10 @@ export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
 
-const ALLOWED_MODES = new Set(['timed', 'word', 'code', 'quotes', 'weak', 'zen']);
+// The app's real modes (see index.html mode buttons + session state).
+// The previous allowlist ('timed'/'zen') did not match the app's 'time'
+// mode, so every timed entry was corrupted to 'timed' on export→import.
+const ALLOWED_MODES = new Set(['time', 'word', 'code', 'quotes', 'weak']);
 const ALLOWED_DIFFICULTIES = new Set(['easy', 'medium', 'hard']);
 
 export function toFiniteNumber(value, fallback = 0) {
@@ -37,7 +40,10 @@ export function sanitizeHistoryEntry(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const date = new Date(raw.date);
   if (Number.isNaN(date.getTime())) return null;
-  const mode = ALLOWED_MODES.has(raw.mode) ? raw.mode : 'timed';
+  // Canonicalize entries corrupted by the old allowlist ('timed' → 'time'),
+  // then validate against the real mode set; unknown modes fall back to 'time'.
+  const candidateMode = raw.mode === 'timed' ? 'time' : raw.mode;
+  const mode = ALLOWED_MODES.has(candidateMode) ? candidateMode : 'time';
   const difficulty = ALLOWED_DIFFICULTIES.has(raw.difficulty) ? raw.difficulty : 'easy';
   const entry = {
     date: date.toISOString(),
