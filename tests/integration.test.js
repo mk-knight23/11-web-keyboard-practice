@@ -119,9 +119,11 @@ describe('full app boot + word-mode session (parity with original)', () => {
     expect(storedHistory).toHaveLength(1);
     expect(storedHistory[0].wpm).toBe(oldNetWpm(counters.correct, elapsedMin));
     expect(storedHistory[0].mode).toBe('word');
+    expect(storedHistory[0].metricsVersion).toBe(2);
     const storedStats = JSON.parse(localStorage.getItem('typesprint:v1:stats'));
     expect(storedStats.tests).toBe(1);
     expect(storedStats.bestWPM).toBe(oldNetWpm(counters.correct, elapsedMin));
+    expect(storedStats.metricsVersion).toBe(2);
 
     // Every forward keystroke was recorded for the per-key stats.
     expect(state.keystrokes).toHaveLength(counters.total);
@@ -394,13 +396,17 @@ describe('boot-time migration and rendering', () => {
 
     await bootApp();
 
-    // Namespaced copies exist.
+    // Namespaced copies exist. Pre-v2 bestWPM is archived (metrics v2):
+    // the legacy value was measured with inflated counting, so it is kept
+    // as legacyBestWPM and the active personal best restarts fresh.
     expect(JSON.parse(localStorage.getItem('typesprint:v1:history'))).toEqual([
       legacyEntry,
     ]);
     expect(JSON.parse(localStorage.getItem('typesprint:v1:stats'))).toEqual({
       tests: 7,
-      bestWPM: 64,
+      bestWPM: 0,
+      legacyBestWPM: 64,
+      metricsVersion: 2,
     });
     expect(JSON.parse(localStorage.getItem('typesprint:v1:theme'))).toBe(
       'dark'
@@ -408,7 +414,7 @@ describe('boot-time migration and rendering', () => {
 
     // And they drive the UI: stats panel, history list, theme attribute.
     expect(document.getElementById('statTests').textContent).toBe('7');
-    expect(document.getElementById('statBest').textContent).toBe('64');
+    expect(document.getElementById('statBest').textContent).toBe('0');
     expect(
       document.getElementById('historySection').classList.contains('show')
     ).toBe(true);
@@ -592,6 +598,9 @@ describe('progress dashboard (feature 5)', () => {
     const values = [...dash.querySelectorAll('.dash-value')].map(
       (n) => n.textContent
     );
-    expect(values).toEqual(['70', '96%', '3', '3']); // best WPM, best acc, tests, minutes
+    // Best WPM is the ACTIVE personal best: the seeded stats are pre-v2, so
+    // the inflated 70 is archived as legacyBestWPM and the active best is 0
+    // until a metrics-v2 result lands (see docs/v3/METRICS_V2.md).
+    expect(values).toEqual(['0', '96%', '3', '3']); // best WPM, best acc, tests, minutes
   });
 });

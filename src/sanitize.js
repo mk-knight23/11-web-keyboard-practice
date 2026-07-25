@@ -39,7 +39,7 @@ export function sanitizeHistoryEntry(raw) {
   if (Number.isNaN(date.getTime())) return null;
   const mode = ALLOWED_MODES.has(raw.mode) ? raw.mode : 'timed';
   const difficulty = ALLOWED_DIFFICULTIES.has(raw.difficulty) ? raw.difficulty : 'easy';
-  return {
+  const entry = {
     date: date.toISOString(),
     wpm: toFiniteNumber(raw.wpm),
     rawWPM: toFiniteNumber(raw.rawWPM),
@@ -49,17 +49,30 @@ export function sanitizeHistoryEntry(raw) {
     mode,
     difficulty,
   };
+  // Preserve the metrics-v2 tag (literal 2 only); absence marks a pre-v2
+  // entry measured with the inflated legacy counting.
+  if (raw.metricsVersion === 2) entry.metricsVersion = 2;
+  return entry;
 }
 
 /**
- * Rebuild stats from validated numbers only.
+ * Rebuild stats from validated numbers only. The metrics-v2 fields
+ * (legacyBestWPM archive + metricsVersion tag) are preserved so a v2
+ * backup round-trips intact; metricsVersion is only kept when it is
+ * exactly the literal 2 — anything else is dropped so pre-v2 imports
+ * are archived by the load-time migration (history.migrateStatsToV2).
  */
 export function sanitizeStats(raw) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { tests: 0, bestWPM: 0 };
-  return {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { tests: 0, bestWPM: 0, legacyBestWPM: 0 };
+  }
+  const clean = {
     tests: Math.max(0, toFiniteNumber(raw.tests)),
     bestWPM: Math.max(0, toFiniteNumber(raw.bestWPM)),
+    legacyBestWPM: Math.max(0, toFiniteNumber(raw.legacyBestWPM)),
   };
+  if (raw.metricsVersion === 2) clean.metricsVersion = 2;
+  return clean;
 }
 
 const MAX_KEY_LABEL_LENGTH = 12;

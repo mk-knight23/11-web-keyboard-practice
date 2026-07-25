@@ -4,7 +4,7 @@
  */
 import { el } from './ui.js';
 import { track } from './analytics.js';
-import { summarizeTest } from './lib/typing-metrics.js';
+import { summarizeTest, METRICS_VERSION } from './lib/typing-metrics.js';
 import {
   getStats,
   saveStats,
@@ -58,7 +58,8 @@ export function endTest() {
   if (isPersonalBest) stats.bestWPM = summary.netWpm;
   saveStats();
 
-  // History entry
+  // History entry — tagged with the metrics version that produced it so
+  // v2 results are distinguishable from pre-fix (inflated) entries.
   addHistoryEntry({
     date: new Date().toISOString(),
     wpm: summary.netWpm,
@@ -68,6 +69,7 @@ export function endTest() {
     errors: state.errors,
     mode: state.mode,
     difficulty: state.difficulty,
+    metricsVersion: METRICS_VERSION,
   });
 
   updateStatsDisplay();

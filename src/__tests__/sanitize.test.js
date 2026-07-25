@@ -68,11 +68,38 @@ describe('sanitizeHistoryEntry', () => {
     const entry = sanitizeHistoryEntry({ date: '2026-07-22', evil: '<svg/onload=1>' });
     expect(entry.evil).toBeUndefined();
   });
+  it('preserves a literal metricsVersion 2 tag and drops forged ones', () => {
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, metricsVersion: 2 }).metricsVersion
+    ).toBe(2);
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, metricsVersion: '2<x>' }).metricsVersion
+    ).toBeUndefined();
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40 }).metricsVersion
+    ).toBeUndefined();
+  });
 });
 
 describe('sanitizeStats / sanitizePerKey', () => {
   it('coerces stats to numbers', () => {
-    expect(sanitizeStats({ tests: '9', bestWPM: '80<script>' })).toEqual({ tests: 9, bestWPM: 0 });
+    expect(sanitizeStats({ tests: '9', bestWPM: '80<script>' })).toEqual({
+      tests: 9,
+      bestWPM: 0,
+      legacyBestWPM: 0,
+    });
+  });
+  it('preserves the metrics-v2 fields so a v2 backup round-trips intact', () => {
+    expect(
+      sanitizeStats({ tests: 2, bestWPM: 50, legacyBestWPM: 84, metricsVersion: 2 })
+    ).toEqual({ tests: 2, bestWPM: 50, legacyBestWPM: 84, metricsVersion: 2 });
+  });
+  it('drops a forged metricsVersion so pre-v2 imports still get archived on load', () => {
+    expect(sanitizeStats({ tests: 1, bestWPM: 99, metricsVersion: '2<x>' })).toEqual({
+      tests: 1,
+      bestWPM: 99,
+      legacyBestWPM: 0,
+    });
   });
   it('drops oversized or non-string perKey keys', () => {
     const out = sanitizePerKey({
@@ -106,7 +133,7 @@ describe('sanitizeImportPayload end-to-end', () => {
     const clean = sanitizeImportPayload(malicious);
     expect(clean.data.history).toHaveLength(1);
     expect(clean.data.history[0].mode).toBe('timed');
-    expect(clean.data.stats).toEqual({ tests: 3, bestWPM: 0 });
+    expect(clean.data.stats).toEqual({ tests: 3, bestWPM: 0, legacyBestWPM: 0 });
     expect(Object.keys(clean.data.perKey)).toEqual(['t']);
     expect(clean.data.theme).toBeUndefined();
     expect(clean.data.extraneous).toBeUndefined();

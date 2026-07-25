@@ -11,6 +11,14 @@
 const CHARS_PER_WORD = 5;
 
 /**
+ * Metrics schema version. v2 = correction-aware first-strike counting
+ * (backspaces never inflate accuracy/WPM; overflow counts as errors).
+ * Results and stats produced before v2 were measured with inflated
+ * counting and are not comparable — see docs/v3/METRICS_V2.md.
+ */
+export const METRICS_VERSION = 2;
+
+/**
  * Raw WPM — chars/5 divided by minutes. Ignores accuracy.
  * @param {number} totalChars
  * @param {number} elapsedSec
