@@ -8,20 +8,15 @@ MK TypeSprint is a browser typing lab. Start a timed test or word-count test, ty
 
 ## What actually ships today
 
-- Timed modes (15/30/60/120s + custom), word-count modes (10/25/50/100 + custom).
-- Content: common English (easy/medium/hard word banks), curated quotes, code snippets in multiple languages, punctuation, numbers, and a zen mode.
-- Live metrics: raw WPM, net WPM, accuracy, error count.
-- Persistent history + personal best.
-- Modular typing engine ([`src/lib/typing-metrics.js`](src/lib/typing-metrics.js)) with pure functions unit-tested against canonical WPM math (23 tests).
-- Versioned storage layer ([`src/lib/storage.js`](src/lib/storage.js)) with namespaced keys, JSON export, JSON import, storage-usage introspection (9 tests).
+- Five practice modes: word mode (20-word test), timed mode (15/30/60/120 s), code, quotes, and weak-keys practice.
+- Content: common English word banks (easy/medium/hard), curated quotes, and code snippets (JavaScript, Python, TypeScript, SQL).
+- Live metrics: raw WPM, net WPM, accuracy, error count — correction-aware counting (metrics v2, see [docs/v3/METRICS_V2.md](docs/v3/METRICS_V2.md)).
+- Persistent history, single global personal best, keyboard accuracy heatmap, weak-key targeting, and a progress dashboard.
+- Modular typing engine ([`src/lib/typing-metrics.js`](src/lib/typing-metrics.js)) with pure functions unit-tested against canonical WPM math.
+- Versioned storage layer ([`src/lib/storage.js`](src/lib/storage.js)) with namespaced keys and JSON export/import.
 - Analytics: nothing loads unless `VITE_GTM_ID` or `VITE_GA4_ID` is set at build time, or Vercel Analytics is enabled in the dashboard. See [docs/ANALYTICS.md](docs/ANALYTICS.md).
 
-Roadmap (see [docs/ROADMAP.md](docs/ROADMAP.md)):
-
-- Full modularization: `index.html` still holds the UI + orchestrator; the pure math and storage layers have been extracted but the DOM controller has not. Coming next.
-- Keyboard heatmap + weakest-key adaptive practice using `findWeakestKeys` already exposed by `typing-metrics.js`.
-- Multilingual word banks.
-- Optional AI coach (env placeholders exist; no LLM calls wired yet).
+Not shipped (planned — see [docs/ROADMAP.md](docs/ROADMAP.md)): numbers/punctuation content, zen mode, custom durations and word counts, multilingual word banks, consistency metric.
 
 ## Tech stack
 
@@ -55,8 +50,15 @@ Deploys to Vercel via Git integration. Framework: Vite (auto). Output: `dist/`.
 ## Project structure
 
 ```
-index.html            # UI + main controller (extraction to modules in progress)
+index.html            # markup + inline CSS (CSS extraction planned for Wave 3)
 src/
+  main.js                   # app orchestrator (event wiring, bootstrap)
+  session.js                # test session state machine + input counting
+  results.js                # end-of-test flow (summary, persistence, modal)
+  history.js                # history/stats persistence + metrics-v2 migration
+  heatmap.js, dashboard.js  # per-key heatmap and progress dashboard
+  practice.js, content.js   # weak-key practice + word/quote/code banks
+  sanitize.js               # import sanitization + HTML escaping
   lib/
     typing-metrics.js       # pure math: WPM, accuracy, consistency, per-key, weakest keys
     storage.js              # versioned localStorage wrapper + export/import
@@ -66,7 +68,7 @@ public/
   sitemap.xml
   manifest.webmanifest
 tests/
-  app.test.js
+  integration.test.js       # boots the real markup + module graph
   setup.js
 ```
 
