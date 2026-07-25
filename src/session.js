@@ -32,6 +32,8 @@ export const state = {
   /** @type {Array<{ key: string, correct: boolean }>} */
   keystrokes: [],
   prevTypedLength: 0,
+  /** Furthest input length reached for the current text (metrics v2). */
+  maxTypedLength: 0,
 };
 
 let onTestEnd = () => {};
@@ -58,21 +60,32 @@ export function setNextTextProvider(fn) {
    ============================================ */
 
 /**
- * Per-input-event counter deltas. Mirrors the original inline logic exactly:
- * every input event counts one "total" char; when the typed text is not
- * longer than the target, the last typed char decides correct vs error
- * (an empty string compares undefined === undefined and counts correct).
- * @param {string} typed
- * @param {string} target
+ * Per-input-event counter deltas — metrics v2 ("first-strike" scoring).
+ *
+ * Every position of the target is scored exactly once: on the first forward
+ * keystroke that reaches it. Backspaces are correction events and count
+ * nothing; retyping a position after a correction is not re-scored (so
+ * type/backspace loops cannot farm WPM, and a corrected error keeps its
+ * original error count). Typing past the end of the target scores each
+ * overflow position as an error. Multi-char forward jumps (paste, IME
+ * commit) score once per newly reached position.
+ *
+ * @param {string} typed current full input value
+ * @param {string} target text the user is supposed to type
+ * @param {number} maxTypedLength furthest input length reached so far
  * @returns {{ totalChars: number, correctChars: number, errors: number }}
  */
-export function computeInputDelta(typed, target) {
-  const delta = { totalChars: 1, correctChars: 0, errors: 0 };
-  if (typed.length <= target.length) {
-    if (typed[typed.length - 1] === target[typed.length - 1]) {
-      delta.correctChars = 1;
+export function computeInputDelta(typed, target, maxTypedLength = 0) {
+  const delta = { totalChars: 0, correctChars: 0, errors: 0 };
+  // Backspace/deletion or retype of already-scored ground: nothing to score.
+  if (typed.length <= maxTypedLength) return delta;
+  for (let i = maxTypedLength; i < typed.length; i++) {
+    delta.totalChars += 1;
+    if (i < target.length && typed[i] === target[i]) {
+      delta.correctChars += 1;
     } else {
-      delta.errors = 1;
+      // Wrong char, or overflow past the passage end — both are errors.
+      delta.errors += 1;
     }
   }
   return delta;
@@ -108,6 +121,7 @@ export function startTest() {
   state.errors = 0;
   state.keystrokes = [];
   state.prevTypedLength = 0;
+  state.maxTypedLength = 0;
 
   // Style for code mode
   const isCode = state.mode === 'code';
@@ -162,7 +176,7 @@ export function handleInput() {
   const typed = el.wordInput.value;
   const target = state.currentWord;
 
-  const delta = computeInputDelta(typed, target);
+  const delta = computeInputDelta(typed, target, state.maxTypedLength);
   state.totalChars += delta.totalChars;
   state.correctChars += delta.correctChars;
   state.errors += delta.errors;
@@ -170,6 +184,7 @@ export function handleInput() {
   const keystroke = extractKeystroke(typed, target, state.prevTypedLength);
   if (keystroke) state.keystrokes.push(keystroke);
   state.prevTypedLength = typed.length;
+  state.maxTypedLength = Math.max(state.maxTypedLength, typed.length);
 
   displayWord(typed, target);
 
@@ -202,6 +217,7 @@ function advanceToNextText() {
   state.currentWord = nextTextProvider();
   el.wordInput.value = '';
   state.prevTypedLength = 0;
+  state.maxTypedLength = 0;
   el.wordText.textContent = state.currentWord;
   displayWord('', state.currentWord);
 }
@@ -223,6 +239,7 @@ export function resetGame() {
   el.wordInput.disabled = true;
   el.wordInput.value = '';
   state.prevTypedLength = 0;
+  state.maxTypedLength = 0;
   el.wordText.textContent = 'Press Start to begin';
   el.wordDisplay.classList.remove('correct', 'incorrect', 'coding');
   el.wordInput.classList.remove('coding');

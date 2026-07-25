@@ -52,18 +52,27 @@ afterEach(() => {
 
 /**
  * Simulates one input event, advancing the clock and independently tracking
- * the counters with the ORIGINAL inline algorithm.
+ * the counters with the metrics-v2 first-strike algorithm: every position is
+ * scored once, on the first forward keystroke that reaches it; backspaces
+ * and retypes count nothing; overflow past the target end is an error.
  */
 function makeTyper(input, counters) {
+  let maxTyped = 0;
   return function dispatchValue(value, target) {
     vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    // Every dispatched event advances the clock, counted or not.
+    counters.events = (counters.events ?? 0) + 1;
     input.value = value;
-    counters.total++;
-    if (value.length <= target.length) {
-      if (value[value.length - 1] === target[value.length - 1])
-        counters.correct++;
-      else counters.errors++;
+    if (value.length > maxTyped) {
+      for (let i = maxTyped; i < value.length; i++) {
+        counters.total++;
+        if (i < target.length && value[i] === target[i]) counters.correct++;
+        else counters.errors++;
+      }
+      maxTyped = value.length;
     }
+    // Completing the word advances to the next text and resets the input.
+    if (value === target) maxTyped = 0;
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 }
@@ -91,7 +100,7 @@ describe('full app boot + word-mode session (parity with original)', () => {
     const modal = document.getElementById('resultsModal');
     expect(modal.classList.contains('show')).toBe(true);
 
-    const elapsedMin = (counters.total * MS_PER_KEYSTROKE) / 60000;
+    const elapsedMin = (counters.events * MS_PER_KEYSTROKE) / 60000;
     expect(document.getElementById('modalWPM').textContent).toBe(
       String(oldNetWpm(counters.correct, elapsedMin))
     );
@@ -119,7 +128,9 @@ describe('full app boot + word-mode session (parity with original)', () => {
     expect(state.keystrokes.every((k) => k.correct)).toBe(true);
   });
 
-  it('tracks errors and backspaces exactly like the original algorithm', async () => {
+  // Updated for metrics v2: this test previously pinned the buggy legacy
+  // behavior (backspace counted as a correct char via undefined===undefined).
+  it('tracks errors and backspaces with v2 counting (corrections never inflate stats)', async () => {
     const { state } = await bootApp();
     const input = document.getElementById('wordInput');
     const counters = { total: 0, correct: 0, errors: 0 };
@@ -128,9 +139,11 @@ describe('full app boot + word-mode session (parity with original)', () => {
     document.getElementById('startBtn').click();
 
     // First word: one wrong first char, backspace, then type it correctly.
+    // v2: the wrong char keeps its error; the backspace and the corrected
+    // retype of position 0 count nothing.
     const first = state.currentWord;
-    type('x', first); // wrong char → error
-    type('', first); // backspace → original quirk counts correct
+    type('~', first); // wrong char → error (words never contain '~')
+    type('', first); // backspace → correction event, counts nothing
     for (let i = 1; i <= first.length; i++) type(first.slice(0, i), first);
 
     // Remaining 19 words typed cleanly.
@@ -140,7 +153,7 @@ describe('full app boot + word-mode session (parity with original)', () => {
     }
 
     expect(state.isRunning).toBe(false);
-    const elapsedMin = (counters.total * MS_PER_KEYSTROKE) / 60000;
+    const elapsedMin = (counters.events * MS_PER_KEYSTROKE) / 60000;
     expect(counters.errors).toBe(1);
     expect(document.getElementById('modalErrors').textContent).toBe('1');
     expect(document.getElementById('modalWPM').textContent).toBe(
