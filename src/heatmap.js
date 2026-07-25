@@ -5,6 +5,7 @@
  */
 import { el } from './ui.js';
 import { read, write, STORAGE_KEYS } from './lib/storage.js';
+import { notifySaveFailure } from './history.js';
 
 export const QWERTY_ROWS = [
   ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
@@ -65,7 +66,7 @@ export function recordSessionPerKey(sessionPerKey) {
   if (!sessionPerKey || Object.keys(sessionPerKey).length === 0)
     return loadPerKeyStats();
   const merged = mergePerKeyStats(loadPerKeyStats(), sessionPerKey);
-  write(STORAGE_KEYS.PER_KEY, merged);
+  if (!write(STORAGE_KEYS.PER_KEY, merged)) notifySaveFailure();
   return merged;
 }
 

@@ -266,6 +266,59 @@ describe('metric integrity v2 — live session counting', () => {
   });
 });
 
+describe('storage write failure surfacing', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows a non-blocking notice when results can't be persisted (quota exceeded)", async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+    document.getElementById('startBtn').click();
+
+    // Storage fills up mid-test: every subsequent write throws.
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError');
+    });
+
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+
+    // The flow completed anyway — the failure is non-blocking.
+    expect(state.isRunning).toBe(false);
+    expect(
+      document.getElementById('resultsModal').classList.contains('show')
+    ).toBe(true);
+
+    // And the user was told their results were not saved.
+    const message = document.getElementById('message');
+    expect(message.textContent).toBe(
+      "Results couldn't be saved — storage may be full"
+    );
+    expect(message.className).toContain('error');
+  });
+
+  it('shows a notice when the theme preference cannot be persisted', async () => {
+    await bootApp();
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota exceeded', 'QuotaExceededError');
+    });
+
+    document.getElementById('themeToggle').click();
+
+    // The toggle still applied visually (non-blocking)…
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    // …but the user was told it will not survive a reload.
+    expect(document.getElementById('message').textContent).toBe(
+      "Theme preference couldn't be saved — storage may be full"
+    );
+  });
+});
+
 describe('IME composition guard (metrics v2)', () => {
   function setValueAndInput(input, value) {
     vi.advanceTimersByTime(MS_PER_KEYSTROKE);

@@ -133,12 +133,29 @@ export function getStats() {
   return stats;
 }
 
+export const SAVE_FAILURE_MESSAGE =
+  "Results couldn't be saved — storage may be full";
+
+/**
+ * Surface a failed persistence write as a non-blocking toast. Defensive:
+ * skips silently when the DOM registry has not been initialized (unit tests
+ * import this module without booting the UI).
+ */
+export function notifySaveFailure(message = SAVE_FAILURE_MESSAGE) {
+  if (!el || !el.message) return;
+  showMessage(message, 'error');
+}
+
 export function saveStats() {
-  write(STORAGE_KEYS.STATS, stats);
+  const ok = write(STORAGE_KEYS.STATS, stats);
+  if (!ok) notifySaveFailure();
+  return ok;
 }
 
 export function saveHistory() {
-  write(STORAGE_KEYS.HISTORY, history);
+  const ok = write(STORAGE_KEYS.HISTORY, history);
+  if (!ok) notifySaveFailure();
+  return ok;
 }
 
 export function addHistoryEntry(entry) {
