@@ -34,6 +34,8 @@ export const state = {
   prevTypedLength: 0,
   /** Furthest input length reached for the current text (metrics v2). */
   maxTypedLength: 0,
+  /** True between compositionstart and compositionend (IME input active). */
+  isComposing: false,
 };
 
 let onTestEnd = () => {};
@@ -122,6 +124,7 @@ export function startTest() {
   state.keystrokes = [];
   state.prevTypedLength = 0;
   state.maxTypedLength = 0;
+  state.isComposing = false;
 
   // Style for code mode
   const isCode = state.mode === 'code';
@@ -172,9 +175,31 @@ export function stopTimer() {
   el.timerDisplay.classList.remove('show', 'warning');
 }
 
+/** IME guard: input events during an active composition are provisional. */
+export function handleCompositionStart() {
+  state.isComposing = true;
+}
+
+/**
+ * IME guard: the committed string is scored exactly once, here. A trailing
+ * input event after compositionend (Safari ordering) is harmless because
+ * position-based scoring never re-scores already-reached positions.
+ */
+export function handleCompositionEnd() {
+  state.isComposing = false;
+  handleInput();
+}
+
 export function handleInput() {
   const typed = el.wordInput.value;
   const target = state.currentWord;
+
+  // During IME composition, intermediate values are provisional: update the
+  // visual highlighting only — counting happens once on compositionend.
+  if (state.isComposing) {
+    displayWord(typed, target);
+    return;
+  }
 
   const delta = computeInputDelta(typed, target, state.maxTypedLength);
   state.totalChars += delta.totalChars;
@@ -240,6 +265,7 @@ export function resetGame() {
   el.wordInput.value = '';
   state.prevTypedLength = 0;
   state.maxTypedLength = 0;
+  state.isComposing = false;
   el.wordText.textContent = 'Press Start to begin';
   el.wordDisplay.classList.remove('correct', 'incorrect', 'coding');
   el.wordInput.classList.remove('coding');

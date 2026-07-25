@@ -266,6 +266,74 @@ describe('metric integrity v2 — live session counting', () => {
   });
 });
 
+describe('IME composition guard (metrics v2)', () => {
+  function setValueAndInput(input, value) {
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  it('ignores intermediate composition updates and scores the committed string once', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    // Intermediate composition updates fire input events with provisional text.
+    setValueAndInput(input, 'ち');
+    setValueAndInput(input, 'ちゃ');
+    expect(state.totalChars).toBe(0);
+    expect(state.correctChars).toBe(0);
+    expect(state.errors).toBe(0);
+
+    // Commit: the provisional text is replaced by the committed string.
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.totalChars).toBe(committed.length);
+    expect(state.correctChars).toBe(committed.length);
+    expect(state.errors).toBe(0);
+  });
+
+  it('a trailing input event after compositionend cannot double-count (browser ordering)', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    setValueAndInput(input, 'ち');
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+    // Safari fires the final input event AFTER compositionend.
+    setValueAndInput(input, committed);
+
+    expect(state.totalChars).toBe(committed.length);
+    expect(state.correctChars).toBe(committed.length);
+  });
+
+  it('a composition that commits the whole word completes the word', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    setValueAndInput(input, 'ち');
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = word;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.wordsTyped).toBe(1);
+    expect(state.totalChars).toBe(word.length);
+    expect(state.correctChars).toBe(word.length);
+    expect(input.value).toBe(''); // advanced to the next text
+  });
+});
+
 describe('results modal focus management (a11y wave-2)', () => {
   async function completeWordTest() {
     const { state } = await bootApp();
