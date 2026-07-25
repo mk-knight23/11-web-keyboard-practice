@@ -63,24 +63,6 @@ export function clearAll() {
   }
 }
 
-export function usageBytes() {
-  if (!isBrowser()) return 0;
-  let total = 0;
-  try {
-    const prefix = `${NAMESPACE}:`;
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(prefix)) {
-        const v = localStorage.getItem(k) ?? '';
-        total += k.length + v.length;
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return total * 2;
-}
-
 export function exportAll() {
   if (!isBrowser()) return { version: SCHEMA_VERSION, data: {} };
   const data = {};
@@ -125,6 +107,5 @@ export const STORAGE_KEYS = Object.freeze({
   STATS: 'stats',
   HISTORY: 'history',
   THEME: 'theme',
-  SETTINGS: 'settings',
   PER_KEY: 'perKey',
 });

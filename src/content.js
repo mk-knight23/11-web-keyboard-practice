@@ -484,18 +484,3 @@ export function getWeakKeyWord(weakKeys, difficulty, rng = Math.random) {
   return pick(bank, rng);
 }
 
-/**
- * Generate a full practice text of `wordCount` words biased toward weak keys.
- * @param {string[]} weakKeys
- * @param {{ difficulty?: string, wordCount?: number, rng?: () => number }} [opts]
- */
-export function generateWeakKeyText(weakKeys, opts = {}) {
-  const difficulty = opts.difficulty ?? 'medium';
-  const wordCount = opts.wordCount ?? 20;
-  const rng = opts.rng ?? Math.random;
-  const words = [];
-  for (let i = 0; i < wordCount; i++) {
-    words.push(getWeakKeyWord(weakKeys, difficulty, rng));
-  }
-  return words.join(' ');
-}

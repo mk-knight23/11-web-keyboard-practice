@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  getWeakKeyWord,
-  generateWeakKeyText,
-  wordBanks,
-  WEAK_POOL_PROBABILITY,
-} from '../content.js';
+import { getWeakKeyWord, wordBanks } from '../content.js';
 
 /** mulberry32 — tiny deterministic PRNG for seeded tests. */
 function mulberry32(seed) {
@@ -42,52 +37,14 @@ describe('getWeakKeyWord', () => {
   });
 });
 
-describe('generateWeakKeyText — deterministic, elevated weak-key frequency', () => {
-  it('is fully deterministic for the same seed', () => {
-    const a = generateWeakKeyText(WEAK, {
-      difficulty: 'hard',
-      wordCount: 30,
-      rng: mulberry32(42),
-    });
-    const b = generateWeakKeyText(WEAK, {
-      difficulty: 'hard',
-      wordCount: 30,
-      rng: mulberry32(42),
-    });
-    expect(a).toBe(b);
-    expect(a.split(' ')).toHaveLength(30);
-  });
-
-  it('contains weak keys at elevated frequency vs the baseline bank rate', () => {
+describe('getWeakKeyWord — elevated weak-key frequency', () => {
+  it('draws words containing weak keys at an elevated rate vs the bank baseline', () => {
     const bank = wordBanks.hard;
     const baselineRate = bank.filter(wordHasWeakKey).length / bank.length;
-
-    const words = generateWeakKeyText(WEAK, {
-      difficulty: 'hard',
-      wordCount: 200,
-      rng: mulberry32(7),
-    }).split(' ');
-    const generatedRate = words.filter(wordHasWeakKey).length / words.length;
-
-    // ~WEAK_POOL_PROBABILITY of picks come from the weak pool, so the rate
-    // must sit far above the bank's natural rate.
-    expect(generatedRate).toBeGreaterThan(baselineRate * 2);
-    expect(generatedRate).toBeGreaterThanOrEqual(WEAK_POOL_PROBABILITY - 0.15);
-  });
-
-  it('boosts single seeded weak keys in the medium bank too', () => {
-    const weak = ['x'];
-    const bank = wordBanks.medium;
-    const baselineRate =
-      bank.filter((w) => w.includes('x')).length / bank.length;
-    const words = generateWeakKeyText(weak, {
-      difficulty: 'medium',
-      wordCount: 200,
-      rng: mulberry32(11),
-    }).split(' ');
-    const generatedRate =
-      words.filter((w) => w.includes('x')).length / words.length;
-    expect(generatedRate).toBeGreaterThan(baselineRate);
-    expect(generatedRate).toBeGreaterThan(0.5);
+    const rng = mulberry32(7);
+    const words = [];
+    for (let i = 0; i < 200; i++) words.push(getWeakKeyWord(WEAK, 'hard', rng));
+    const drawnRate = words.filter(wordHasWeakKey).length / words.length;
+    expect(drawnRate).toBeGreaterThan(baselineRate * 2);
   });
 });

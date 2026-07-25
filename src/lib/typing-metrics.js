@@ -60,6 +60,9 @@ export function calculateAccuracy(correctChars, totalChars) {
 /**
  * Consistency: how steady the typing rhythm is, expressed 0..100.
  * Computed from inter-keystroke interval coefficient of variation.
+ *
+ * KEEP even though no caller supplies real intervals yet: Wave 3 rebuilds
+ * the input pipeline with keystroke timestamps and wires this metric in.
  * @param {number[]} intervalsMs — time between successive keystrokes
  * @returns {number}
  */
