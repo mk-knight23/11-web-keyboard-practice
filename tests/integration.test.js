@@ -184,6 +184,73 @@ describe('full app boot + word-mode session (parity with original)', () => {
   });
 });
 
+describe('metric integrity v2 — live session counting', () => {
+  /** Raw dispatcher: sets the input value and fires an input event. */
+  function makeDispatcher(input) {
+    return function dispatch(value) {
+      vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+  }
+
+  it('a type/backspace loop does not inflate totalChars, correctChars, or WPM', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const first = state.currentWord;
+
+    // Farm the first (correct) char: type it, backspace it, ten times over.
+    for (let n = 0; n < 10; n++) {
+      dispatch(first.slice(0, 1));
+      dispatch('');
+    }
+    dispatch(first.slice(0, 1));
+
+    // The first position must have been scored exactly once.
+    expect(state.totalChars).toBe(1);
+    expect(state.correctChars).toBe(1);
+    expect(state.errors).toBe(0);
+  });
+
+  it('a typed-then-corrected wrong char keeps its error and is not double-counted', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+
+    dispatch('~'); // guaranteed-wrong first char
+    dispatch(''); // backspace
+    dispatch(state.currentWord.slice(0, 1)); // corrected retype
+
+    expect(state.totalChars).toBe(1);
+    expect(state.correctChars).toBe(0);
+    expect(state.errors).toBe(1);
+  });
+
+  it('overflow typing past the passage end increments the Errors stat', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+
+    // Type the whole word except its last char, then two overflow chars
+    // beyond the passage end (word stays incomplete → no advance).
+    const stem = word.slice(0, word.length - 1);
+    for (let i = 1; i <= stem.length; i++) dispatch(stem.slice(0, i));
+    dispatch(stem + '~'); // wrong final char (words never contain '~')
+    dispatch(stem + '~z'); // overflow char past the passage end
+
+    expect(state.errors).toBe(2); // 1 wrong final char + 1 overflow char
+    expect(state.totalChars).toBe(word.length + 1);
+  });
+});
+
 describe('results modal focus management (a11y wave-2)', () => {
   async function completeWordTest() {
     const { state } = await bootApp();
