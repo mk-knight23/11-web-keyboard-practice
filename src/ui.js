@@ -10,6 +10,7 @@ export const el = {};
 export function initElements() {
   Object.assign(el, {
     themeToggle: document.getElementById('themeToggle'),
+    heroCta: document.getElementById('heroCta'),
     sunIcon: document.getElementById('sunIcon'),
     moonIcon: document.getElementById('moonIcon'),
     statWPM: document.getElementById('statWPM'),

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing Speed Test — Free WPM &amp; Accuracy Test | TypeSprint</title>
+    <meta name="description" content="Free in-browser typing speed test: timed 15-120 second runs, 20-word sprints, quotes, and real code. Honest WPM and accuracy scoring." />
+    <meta name="author" content="Kazi Musharraf" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://11-web-keyboard-practice.vercel.app/typing-test" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Typing Speed Test — Free WPM &amp; Accuracy Test" />
+    <meta property="og:description" content="Free in-browser typing speed test: timed 15-120 second runs, 20-word sprints, quotes, and real code. Honest WPM and accuracy scoring." />
+    <meta property="og:url" content="https://11-web-keyboard-practice.vercel.app/typing-test" />
+    <meta property="og:site_name" content="MK TypeSprint" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Typing Speed Test — Free WPM &amp; Accuracy Test" />
+    <meta name="twitter:description" content="Free in-browser typing speed test: timed 15-120 second runs, 20-word sprints, quotes, and real code. Honest WPM and accuracy scoring." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨️</text></svg>" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    <meta name="theme-color" content="#8b5cf6" />
+
+    <!-- FAQPage schema — mirrors the visible FAQ section below, all questions -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How is WPM calculated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "One word is standardized as five characters. Net WPM counts only correctly typed characters per minute; Raw WPM counts every character you typed. The gap between the two shows how much speed you lose to errors."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which test lengths are available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Timed mode offers 15, 30, 60, and 120 seconds. Words mode is a fixed 20-word sprint, and you can also type quotes or real code snippets in JavaScript, Python, TypeScript, and SQL."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do backspace corrections affect my score?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Corrections can't inflate it. Every character position is scored exactly once, on your first attempt. Fixing a mistake doesn't erase the original error, and backspacing adds nothing to your character count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the typing test free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — MK TypeSprint is free and open source, with no account, no ads, and no data collection. Your results are stored only in your browser."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What's a good typing speed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Around 40 WPM is average, 60-80 WPM is good, and professionals often reach 80-100+ WPM. See the average typing speed benchmarks page for detail by level and profession."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <script type="module" src="/src/growth-page.js"></script>
+  </head>
+
+  <body>
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-inner">
+        <a href="/" class="nav-brand">
+          <div class="nav-logo">TS</div>
+          <div class="nav-title">Type<span>Sprint</span></div>
+        </a>
+        <div class="nav-links">
+          <a href="/typing-test" class="nav-link active">Typing Test</a>
+          <a href="/code-typing-practice" class="nav-link">Code Practice</a>
+          <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div class="hero-badge">⚡ Free • No signup • Instant results</div>
+      <h1>Typing Speed Test</h1>
+      <p>Measure your words per minute and accuracy in your browser. Pick a 15–120 second timed run, a 20-word sprint, quotes, or real code — and get numbers you can trust.</p>
+      <a class="hero-cta" href="/">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Start the Typing Test
+      </a>
+    </div>
+
+    <div class="content-section" style="padding-bottom:40px">
+      <div class="section-card prose">
+        <h2>What this test measures</h2>
+        <p>The test reports four numbers, live while you type and in a summary when time runs out:</p>
+        <ul>
+          <li><strong>Net WPM</strong> — correctly typed characters ÷ 5 per minute. This is your headline speed.</li>
+          <li><strong>Raw WPM</strong> — every typed character ÷ 5 per minute, including mistakes.</li>
+          <li><strong>Accuracy</strong> — the share of character positions you got right on the first try.</li>
+          <li><strong>Errors</strong> — every wrong first attempt, including characters typed past the end of the passage.</li>
+        </ul>
+        <p>Scoring is deliberately strict: each character position counts exactly once, on your first keystroke. Backspacing and retyping never adds characters or erases an error, so a type-delete-retype loop can't farm WPM. If accuracy is your focus, the <a href="/typing-accuracy-test">typing accuracy test</a> page explains the scoring model in full.</p>
+      </div>
+
+      <div class="section-card">
+        <h2>Test modes</h2>
+        <div class="benchmark-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+          <div class="benchmark-item">
+            <div class="benchmark-speed" style="font-size:22px">Words</div>
+            <div class="benchmark-label">A fixed 20-word sprint at easy, medium, or hard difficulty</div>
+          </div>
+          <div class="benchmark-item">
+            <div class="benchmark-speed" style="font-size:22px">Timer</div>
+            <div class="benchmark-label">15, 30, 60, or 120 seconds against the clock</div>
+          </div>
+          <div class="benchmark-item">
+            <div class="benchmark-speed" style="font-size:22px">Code</div>
+            <div class="benchmark-label">Real JavaScript, Python, TypeScript, and SQL snippets</div>
+          </div>
+          <div class="benchmark-item">
+            <div class="benchmark-speed" style="font-size:22px">Quotes</div>
+            <div class="benchmark-label">Full sentences with natural punctuation</div>
+          </div>
+          <div class="benchmark-item">
+            <div class="benchmark-speed" style="font-size:22px">Weak Keys</div>
+            <div class="benchmark-label">Words biased toward the keys you miss most</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted)">Every mode runs entirely in your browser — nothing you type is sent anywhere.</p>
+      </div>
+
+      <div class="section-card prose">
+        <h2>Track your progress over time</h2>
+        <p>Every completed test is saved to your local history with its WPM, accuracy, and mode. The progress dashboard draws a WPM trend sparkline from your recent tests, and a per-key accuracy heatmap shows which keys cost you the most — feed those into Weak Keys mode to practice exactly what's failing.</p>
+        <p>Your data stays in your browser's localStorage and can be exported or imported as JSON at any time. No account, no server, no tracking of what you type.</p>
+      </div>
+
+      <div class="section-card">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <div class="faq-q">How is WPM calculated?</div>
+          <div class="faq-a">One word is standardized as five characters. Net WPM counts only correctly typed characters per minute; Raw WPM counts every character you typed. The gap between the two shows how much speed you lose to errors.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Which test lengths are available?</div>
+          <div class="faq-a">Timed mode offers 15, 30, 60, and 120 seconds. Words mode is a fixed 20-word sprint, and you can also type quotes or real code snippets in JavaScript, Python, TypeScript, and SQL.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Do backspace corrections affect my score?</div>
+          <div class="faq-a">Corrections can't inflate it. Every character position is scored exactly once, on your first attempt. Fixing a mistake doesn't erase the original error, and backspacing adds nothing to your character count.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is the typing test free?</div>
+          <div class="faq-a">Yes — MK TypeSprint is free and open source, with no account, no ads, and no data collection. Your results are stored only in your browser.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What's a good typing speed?</div>
+          <div class="faq-a">Around 40 WPM is average, 60–80 WPM is good, and professionals often reach 80–100+ WPM. See the <a href="/average-typing-speed" style="color:var(--primary)">average typing speed benchmarks</a> page for detail by level and profession.</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>Related pages</h2>
+        <ul class="related-links">
+          <li><a href="/typing-accuracy-test">Typing Accuracy Test</a></li>
+          <li><a href="/average-typing-speed">Average Typing Speed &amp; WPM Benchmarks</a></li>
+          <li><a href="/code-typing-practice">Code Typing Practice</a></li>
+          <li><a href="/how-to-type-faster">How to Type Faster</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="footer" role="contentinfo">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
+          MK TypeSprint
+        </div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Take the Test</a>
+          <a href="https://github.com/mk-knight23/MK-TypeSprint" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+        </div>
+        <div class="footer-pages">
+          <a href="/typing-test" class="footer-link">Typing Test</a>
+          <a href="/typing-accuracy-test" class="footer-link">Accuracy Test</a>
+          <a href="/code-typing-practice" class="footer-link">Code Typing</a>
+          <a href="/python-typing-practice" class="footer-link">Python</a>
+          <a href="/javascript-typing-practice" class="footer-link">JavaScript</a>
+          <a href="/average-typing-speed" class="footer-link">Average Typing Speed</a>
+          <a href="/how-to-type-faster" class="footer-link">How to Type Faster</a>
+        </div>
+        <div class="footer-copy">© 2026 <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">Kazi Musharraf</a>. Free and open-source typing practice platform.</div>
+      </div>
+    </footer>
+  </body>
+</html>

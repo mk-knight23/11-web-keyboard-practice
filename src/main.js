@@ -32,10 +32,12 @@ import {
   clearHistory,
 } from './history.js';
 import { track } from './analytics.js';
+import { initAnalyticsLoader } from './analytics-loader.js';
 
 /* ============================================
    Bootstrap
    ============================================ */
+initAnalyticsLoader();
 initElements();
 migrateLegacyData();
 loadPersistedData();
@@ -53,16 +55,32 @@ setNextTextProvider(() =>
       })
 );
 
-// Inline onclick handlers in the markup rely on these globals.
-window.showSection = showSection;
-window.deleteHistoryItem = (i) => {
-  deleteHistoryItem(i);
-  renderDashboard();
-};
-
 /* ============================================
    Event Listeners
    ============================================ */
+// SPA section links (nav + footer). Kept as addEventListener wiring instead
+// of inline onclick so the CSP script-src needs no 'unsafe-inline'.
+document.querySelectorAll('a[data-section]').forEach((link) => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    showSection(link.dataset.section);
+  });
+});
+
+// History-row delete buttons are re-rendered on every renderHistory() call,
+// so they are handled via delegation on the stable list container.
+el.historyList.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-history-index]');
+  if (!btn) return;
+  deleteHistoryItem(Number(btn.dataset.historyIndex));
+  renderDashboard();
+});
+
+el.heroCta.addEventListener('click', () => {
+  el.startBtn.click();
+  el.wordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
 el.themeToggle.addEventListener('click', toggleTheme);
 el.difficulty.addEventListener('change', (e) => {
   state.difficulty = e.target.value;

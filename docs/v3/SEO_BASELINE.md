@@ -34,3 +34,41 @@ Date: 2026-07-23. Verified live via curl/WebFetch against https://11-web-keyboar
 - Indexable URLs: 1. JSON-LD types: 2. OG completeness: 5/6 core tags (missing image).
 - Headers: HSTS preload, nosniff, X-Frame-Options DENY live (good trust signals).
 - Content depth on the single URL: FAQ (5 visible Q&As), typing guide, benchmark tables — strong for "typing speed test" long-tail if split into real routes.
+
+---
+
+## Wave 2.5 update (2026-07-26, `feat/v3-typesprint-growth`) — growth pages + routing
+
+Seven static growth pages ship as real Vite multi-page entries
+(`<slug>/index.html`): `/typing-test`, `/typing-accuracy-test`,
+`/code-typing-practice`, `/python-typing-practice`,
+`/javascript-typing-practice`, `/average-typing-speed`,
+`/how-to-type-faster`. Gated pages NOT built (features don't exist —
+Production Truthfulness): `/typing-test/1-minute`, `/typing-test/5-minute`,
+`/number-typing-test`.
+
+Per page: unique title (≤60ch) / meta description (≤155ch), extensionless
+self-canonical, OG + twitter `summary` card (deliberately NO og:image —
+none exists yet), exactly one H1, visible FAQ mirrored 1:1 by FAQPage
+JSON-LD, related-page interlinks, footer nav to all pages. Homepage is the
+hub (footer resources row); its FAQPage JSON-LD now covers all 5 visible
+questions. `sitemap.xml` is generated at build (8 extensionless URLs);
+the hand-written single-URL `public/sitemap.xml` was removed.
+
+### Routing verification (rewrite-shadowing check)
+
+- `vercel.json` was NOT changed for routing: Vercel matches the filesystem
+  (with `cleanUrls: true`) BEFORE applying `rewrites`, so
+  `dist/<slug>/index.html` serves `/<slug>` and the SPA fallback rewrite
+  cannot shadow the new pages. `trailingSlash: false` 308s `/<slug>/` to
+  the canonical slashless form.
+- `vite preview` locally: Vite's own SPA fallback (appType default) DID
+  shadow slashless slugs, silently serving the homepage at `/typing-test`.
+  Fixed with `appType: 'mpa'` in vite.config.js. Local preview semantics
+  now: `/<slug>/` → correct page (verified all 7 titles), slashless
+  `/<slug>` → 404 (sirv doesn't resolve directory indexes without the
+  slash — local-only limitation; production slashless serving is Vercel's
+  cleanUrls behavior and must be re-verified on the first deploy).
+- Known kept behavior: the SPA rewrite still 200-serves the homepage for
+  unknown paths in production (soft-404s). Candidate follow-up: replace
+  with a real 404 once growth pages are live and indexed.
