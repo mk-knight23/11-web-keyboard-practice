@@ -110,6 +110,40 @@ describe('sanitizeHistoryEntry', () => {
       sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40 }).metricsVersion
     ).toBeUndefined();
   });
+  it('preserves a finite consistency score, clamped and rounded to 0..100', () => {
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, consistency: 87 })
+        .consistency
+    ).toBe(87);
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, consistency: 250 })
+        .consistency
+    ).toBe(100);
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, consistency: -5 })
+        .consistency
+    ).toBe(0);
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, consistency: 87.6 })
+        .consistency
+    ).toBe(88);
+  });
+  it('omits consistency when absent or junk (pre-Wave-3 entries stay bare)', () => {
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40 }).consistency
+    ).toBeUndefined();
+    expect(
+      sanitizeHistoryEntry({ date: '2026-07-22', wpm: 40, consistency: null })
+        .consistency
+    ).toBeUndefined();
+    expect(
+      sanitizeHistoryEntry({
+        date: '2026-07-22',
+        wpm: 40,
+        consistency: '<x>',
+      }).consistency
+    ).toBeUndefined();
+  });
 });
 
 describe('sanitizeStats / sanitizePerKey', () => {

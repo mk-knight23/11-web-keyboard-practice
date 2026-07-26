@@ -546,6 +546,78 @@ describe('input pipeline v2 — timestamped strike log (wave 3)', () => {
   });
 });
 
+describe('consistency metric display (wave 3)', () => {
+  it('shows the consistency score in the results modal and stores it on the entry', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    document.getElementById('startBtn').click();
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+    expect(state.isRunning).toBe(false);
+
+    // Fake timers advance exactly 100ms per keystroke: a metronome-steady
+    // rhythm scores a perfect 100.
+    expect(document.getElementById('modalConsistency').textContent).toBe(
+      '100%'
+    );
+    const stored = JSON.parse(localStorage.getItem('typesprint:v1:history'));
+    expect(stored[0].consistency).toBe(100);
+    // And the history list renders the score.
+    expect(document.getElementById('historyList').textContent).toContain(
+      '100%'
+    );
+  });
+
+  it('shows an em dash when the sample is too small for a score', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    // Timed mode, only 3 keystrokes → 2 intervals → below min-sample.
+    document.querySelector('.btn-option[data-mode="time"]').click();
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+    for (let i = 1; i <= Math.min(3, word.length); i++)
+      type(word.slice(0, i), word);
+    vi.advanceTimersByTime(60000);
+
+    expect(state.isRunning).toBe(false);
+    expect(document.getElementById('modalConsistency').textContent).toBe('—');
+    const stored = JSON.parse(localStorage.getItem('typesprint:v1:history'));
+    expect(stored[0].consistency).toBeUndefined();
+  });
+
+  it('renders pre-Wave-3 history entries (no consistency field) as an em dash', async () => {
+    localStorage.setItem(
+      'typesprint:v1:history',
+      JSON.stringify([
+        {
+          date: '2026-07-01T10:00:00.000Z',
+          wpm: 64,
+          rawWPM: 70,
+          accuracy: 91,
+          time: 60,
+          errors: 6,
+          mode: 'word',
+          difficulty: 'medium',
+        },
+      ])
+    );
+    await bootApp();
+    const items = document.querySelectorAll(
+      '#historyList .history-item:not(:first-child)'
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toContain('—');
+  });
+});
+
 describe('results modal focus management (a11y wave-2)', () => {
   async function completeWordTest() {
     const { state } = await bootApp();

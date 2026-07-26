@@ -657,6 +657,7 @@ select:focus, .btn-option:focus {
 }
 .modal-header p { color: var(--text-secondary); font-size: 14px; }
 .modal-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+.modal-stat-wide { grid-column: 1 / -1; }
 .modal-stat {
   text-align: center;
   padding: 20px;
@@ -723,7 +724,7 @@ select:focus, .btn-option:focus {
 }
 .history-item {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
   gap: 8px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--divider);
