@@ -115,6 +115,121 @@ export function strikeIntervalsMs(strikes) {
 }
 
 /**
+ * Outlier ceiling for latency attribution. Intervals longer than this are
+ * pauses (thinking, distraction), not typing latency, and are excluded
+ * from per-key/bigram aggregation. Consistency, by contrast, keeps pauses
+ * — rhythm is honest about stops; latency measures finger speed.
+ */
+export const MAX_LATENCY_INTERVAL_MS = 5000;
+
+/** Lowercase a single-char key; longer labels pass through unchanged. */
+function normalizeLatencyKey(key) {
+  return typeof key === 'string' ? key.toLowerCase() : null;
+}
+
+/**
+ * A strike qualifies for latency attribution when it scored exactly one
+ * position and that position was within the target (span 1, one key).
+ * Multi-char strikes (paste / IME commits) are one physical action for N
+ * chars — attributing their interval to any single key would be a lie.
+ * @param {{ span: number, keys: Array<{key: string}> }} s
+ */
+function isSingleKeyStrike(s) {
+  return !!s && s.span === 1 && Array.isArray(s.keys) && s.keys.length === 1;
+}
+
+/**
+ * Per-key latency aggregation from a session strike log (data layer for
+ * the Wave 4 adaptive engine — no UI). The latency of a strike is the
+ * interval since the previous strike, attributed to the key it scored.
+ * The first strike of a session has no interval; multi-char strikes and
+ * pauses above MAX_LATENCY_INTERVAL_MS are skipped. Mean latency is
+ * derived by consumers as totalMs / count (no rounding drift stored).
+ * @param {Array<{ t:number, seg:number, pos:number, span:number,
+ *                 keys:Array<{key:string,correct:boolean}> }>} strikes
+ * @param {{ maxIntervalMs?: number }} [opts]
+ * @returns {Record<string, { count: number, totalMs: number }>}
+ */
+export function aggregateKeyLatencies(strikes, opts = {}) {
+  const maxIntervalMs = opts.maxIntervalMs ?? MAX_LATENCY_INTERVAL_MS;
+  const out = {};
+  if (!Array.isArray(strikes)) return out;
+  for (let i = 1; i < strikes.length; i++) {
+    const prev = strikes[i - 1];
+    const cur = strikes[i];
+    if (!isSingleKeyStrike(cur)) continue;
+    const interval = cur.t - prev?.t;
+    if (!Number.isFinite(interval) || interval <= 0) continue;
+    if (interval > maxIntervalMs) continue;
+    const key = normalizeLatencyKey(cur.keys[0].key);
+    if (!key) continue;
+    const entry = out[key] || { count: 0, totalMs: 0 };
+    out[key] = { count: entry.count + 1, totalMs: entry.totalMs + interval };
+  }
+  return out;
+}
+
+/**
+ * Bigram latency aggregation: the interval between two consecutive
+ * single-key strikes that scored ADJACENT positions of the SAME target
+ * text (segment). Corrections (position gaps), text changes (segment
+ * bumps), multi-char strikes, and outlier pauses all break the bigram.
+ * @param {Array<{ t:number, seg:number, pos:number, span:number,
+ *                 keys:Array<{key:string,correct:boolean}> }>} strikes
+ * @param {{ maxIntervalMs?: number }} [opts]
+ * @returns {Record<string, { count: number, totalMs: number }>} keyed by
+ *   the two-char bigram (e.g. "th")
+ */
+export function aggregateBigramLatencies(strikes, opts = {}) {
+  const maxIntervalMs = opts.maxIntervalMs ?? MAX_LATENCY_INTERVAL_MS;
+  const out = {};
+  if (!Array.isArray(strikes)) return out;
+  for (let i = 1; i < strikes.length; i++) {
+    const prev = strikes[i - 1];
+    const cur = strikes[i];
+    if (!isSingleKeyStrike(prev) || !isSingleKeyStrike(cur)) continue;
+    if (cur.seg !== prev.seg || cur.pos !== prev.pos + 1) continue;
+    const interval = cur.t - prev.t;
+    if (!Number.isFinite(interval) || interval <= 0) continue;
+    if (interval > maxIntervalMs) continue;
+    const a = normalizeLatencyKey(prev.keys[0].key);
+    const b = normalizeLatencyKey(cur.keys[0].key);
+    if (!a || !b) continue;
+    const bigram = a + b;
+    const entry = out[bigram] || { count: 0, totalMs: 0 };
+    out[bigram] = {
+      count: entry.count + 1,
+      totalMs: entry.totalMs + interval,
+    };
+  }
+  return out;
+}
+
+/**
+ * Pure merge of a session latency aggregate into the persisted running
+ * aggregate. Returns a NEW object — inputs are never mutated. Junk values
+ * coerce to 0 so a corrupted stored aggregate can never poison new data.
+ * @param {Record<string, { count: number, totalMs: number }>} aggregate
+ * @param {Record<string, { count: number, totalMs: number }>} session
+ * @returns {Record<string, { count: number, totalMs: number }>}
+ */
+export function mergeLatencyStats(aggregate, session) {
+  const merged = {};
+  const toNum = (v) => (Number.isFinite(v) ? v : 0);
+  for (const source of [aggregate || {}, session || {}]) {
+    for (const [key, stat] of Object.entries(source)) {
+      if (!stat || typeof stat !== 'object') continue;
+      const prev = merged[key] || { count: 0, totalMs: 0 };
+      merged[key] = {
+        count: prev.count + toNum(stat.count),
+        totalMs: prev.totalMs + toNum(stat.totalMs),
+      };
+    }
+  }
+  return merged;
+}
+
+/**
  * Per-key breakdown of hits, misses, and derived accuracy.
  * @param {Array<{ key: string, correct: boolean }>} keystrokes
  * @returns {Record<string, { hits: number, misses: number, total: number, accuracy: number }>}

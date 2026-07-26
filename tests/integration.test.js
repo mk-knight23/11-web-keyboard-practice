@@ -546,6 +546,39 @@ describe('input pipeline v2 — timestamped strike log (wave 3)', () => {
   });
 });
 
+describe('latency aggregation persistence (wave 3 — data layer)', () => {
+  it('persists per-key and bigram latency aggregates after a session', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    document.getElementById('startBtn').click();
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+    expect(state.isRunning).toBe(false);
+
+    const keyLatency = JSON.parse(
+      localStorage.getItem('typesprint:v1:keyLatency')
+    );
+    expect(keyLatency).toBeTruthy();
+    // Fake timers: every attributable interval is exactly 100ms.
+    for (const stat of Object.values(keyLatency)) {
+      expect(stat.totalMs / stat.count).toBe(100);
+    }
+
+    const bigramLatency = JSON.parse(
+      localStorage.getItem('typesprint:v1:bigramLatency')
+    );
+    expect(bigramLatency).toBeTruthy();
+    const bigrams = Object.keys(bigramLatency);
+    expect(bigrams.length).toBeGreaterThan(0);
+    expect(bigrams.every((b) => b.length === 2)).toBe(true);
+  });
+});
+
 describe('consistency metric display (wave 3)', () => {
   it('shows the consistency score in the results modal and stores it on the entry', async () => {
     const { state } = await bootApp();

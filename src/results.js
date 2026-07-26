@@ -18,6 +18,7 @@ import {
 } from './history.js';
 import { state, stopTimer } from './session.js';
 import { recordSessionPerKey, renderHeatmap } from './heatmap.js';
+import { recordSessionLatency } from './latency.js';
 import { renderDashboard } from './dashboard.js';
 import { activateFocusTrap, deactivateFocusTrap } from './lib/focus-trap.js';
 
@@ -87,6 +88,9 @@ export function endTest() {
 
   // Aggregate this session's per-key stats and refresh the visualizations.
   recordSessionPerKey(summary.perKey);
+  // Data layer only (Wave 3): per-key/bigram latency for the Wave 4
+  // adaptive engine — no UI reads these yet.
+  recordSessionLatency(state.strikes);
   renderHeatmap();
   renderDashboard();
 

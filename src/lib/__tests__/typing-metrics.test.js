@@ -9,6 +9,10 @@ import {
   summarizeTest,
   strikeIntervalsMs,
   MIN_CONSISTENCY_INTERVALS,
+  aggregateKeyLatencies,
+  aggregateBigramLatencies,
+  mergeLatencyStats,
+  MAX_LATENCY_INTERVAL_MS,
 } from '../typing-metrics.js';
 
 describe('calculateRawWpm', () => {
@@ -175,6 +179,163 @@ describe('findWeakestKeys', () => {
   });
   it('handles null input', () => {
     expect(findWeakestKeys(null)).toEqual([]);
+  });
+});
+
+/** Strike-record helper: single-keyed forward strike. */
+const strike = (t, seg, pos, key, correct = true) => ({
+  t,
+  seg,
+  pos,
+  span: 1,
+  keys: [{ key, correct }],
+});
+
+describe('aggregateKeyLatencies (wave 3 — data layer for the adaptive engine)', () => {
+  it('returns {} for missing or single-strike logs', () => {
+    expect(aggregateKeyLatencies()).toEqual({});
+    expect(aggregateKeyLatencies([])).toEqual({});
+    expect(aggregateKeyLatencies([strike(100, 0, 0, 'a')])).toEqual({});
+  });
+
+  it('attributes the interval since the previous strike to the struck key', () => {
+    const strikes = [
+      strike(100, 0, 0, 'c'),
+      strike(220, 0, 1, 'a'),
+      strike(300, 0, 2, 't'),
+    ];
+    expect(aggregateKeyLatencies(strikes)).toEqual({
+      a: { count: 1, totalMs: 120 },
+      t: { count: 1, totalMs: 80 },
+    });
+  });
+
+  it('accumulates repeated keys into count/totalMs', () => {
+    const strikes = [
+      strike(0, 0, 0, 'a'),
+      strike(100, 0, 1, 'b'),
+      strike(250, 0, 2, 'b'),
+    ];
+    expect(aggregateKeyLatencies(strikes).b).toEqual({
+      count: 2,
+      totalMs: 250,
+    });
+  });
+
+  it('skips multi-char strikes (paste/IME commits are not per-key latencies)', () => {
+    const strikes = [
+      strike(100, 0, 0, 'c'),
+      {
+        t: 300,
+        seg: 0,
+        pos: 1,
+        span: 2,
+        keys: [
+          { key: 'a', correct: true },
+          { key: 't', correct: true },
+        ],
+      },
+    ];
+    expect(aggregateKeyLatencies(strikes)).toEqual({});
+  });
+
+  it('skips pauses above the outlier ceiling (a break is not a latency)', () => {
+    const strikes = [
+      strike(0, 0, 0, 'a'),
+      strike(MAX_LATENCY_INTERVAL_MS + 1, 0, 1, 'b'),
+      strike(MAX_LATENCY_INTERVAL_MS + 101, 0, 2, 'c'),
+    ];
+    expect(aggregateKeyLatencies(strikes)).toEqual({
+      c: { count: 1, totalMs: 100 },
+    });
+  });
+
+  it('normalizes keys to lowercase (matches the per-key accuracy aggregate)', () => {
+    const strikes = [strike(0, 0, 0, 'a'), strike(90, 0, 1, 'B')];
+    expect(Object.keys(aggregateKeyLatencies(strikes))).toEqual(['b']);
+  });
+
+  it('includes wrong strikes — latency of the intended key is still latency', () => {
+    const strikes = [
+      strike(0, 0, 0, 'a'),
+      strike(150, 0, 1, 'b', false),
+    ];
+    expect(aggregateKeyLatencies(strikes).b).toEqual({
+      count: 1,
+      totalMs: 150,
+    });
+  });
+});
+
+describe('aggregateBigramLatencies', () => {
+  it('records transitions between adjacent single-key strikes in the same segment', () => {
+    const strikes = [
+      strike(100, 0, 0, 'c'),
+      strike(220, 0, 1, 'a'),
+      strike(300, 0, 2, 't'),
+    ];
+    expect(aggregateBigramLatencies(strikes)).toEqual({
+      ca: { count: 1, totalMs: 120 },
+      at: { count: 1, totalMs: 80 },
+    });
+  });
+
+  it('never bridges two different target texts (segment change)', () => {
+    const strikes = [
+      strike(100, 0, 0, 'a'), // one-char word "a" completes
+      strike(200, 1, 0, 'b'), // next word starts at pos 0
+    ];
+    expect(aggregateBigramLatencies(strikes)).toEqual({});
+  });
+
+  it('never bridges a correction gap (positions not adjacent)', () => {
+    const strikes = [
+      strike(100, 0, 0, 'c'),
+      // backspace happened; next scored ground is position 2
+      strike(400, 0, 2, 't'),
+    ];
+    expect(aggregateBigramLatencies(strikes)).toEqual({});
+  });
+
+  it('skips outlier pauses and accumulates repeats', () => {
+    const strikes = [
+      strike(0, 0, 0, 't'),
+      strike(100, 0, 1, 'h'),
+      strike(100 + MAX_LATENCY_INTERVAL_MS + 1, 0, 2, 'e'),
+    ];
+    const agg = aggregateBigramLatencies(strikes);
+    expect(agg).toEqual({ th: { count: 1, totalMs: 100 } });
+  });
+});
+
+describe('mergeLatencyStats', () => {
+  it('merges session counts into the aggregate without mutating inputs', () => {
+    const aggregate = { a: { count: 2, totalMs: 300 } };
+    const session = {
+      a: { count: 1, totalMs: 120 },
+      b: { count: 1, totalMs: 90 },
+    };
+    const merged = mergeLatencyStats(aggregate, session);
+    expect(merged).toEqual({
+      a: { count: 3, totalMs: 420 },
+      b: { count: 1, totalMs: 90 },
+    });
+    expect(aggregate).toEqual({ a: { count: 2, totalMs: 300 } });
+  });
+
+  it('coerces junk values to zero instead of propagating NaN', () => {
+    const merged = mergeLatencyStats(
+      { a: { count: 'x', totalMs: null } },
+      { a: { count: 1, totalMs: 100 } }
+    );
+    expect(merged.a).toEqual({ count: 1, totalMs: 100 });
+  });
+
+  it('handles empty inputs', () => {
+    expect(mergeLatencyStats(null, null)).toEqual({});
+    expect(mergeLatencyStats({}, { a: { count: 1, totalMs: 50 } })).toEqual({
+      a: { count: 1, totalMs: 50 },
+    });
   });
 });
 

@@ -108,4 +108,6 @@ export const STORAGE_KEYS = Object.freeze({
   HISTORY: 'history',
   THEME: 'theme',
   PER_KEY: 'perKey',
+  KEY_LATENCY: 'keyLatency',
+  BIGRAM_LATENCY: 'bigramLatency',
 });
