@@ -31,6 +31,16 @@ export const state = {
   errors: 0,
   /** @type {Array<{ key: string, correct: boolean }>} */
   keystrokes: [],
+  /**
+   * Timestamped strike log (input pipeline v2). One record per input event
+   * that scored new positions — the timestamp side of first-strike scoring.
+   * Feeds the consistency metric and per-key/bigram latency aggregation.
+   * @type {Array<{ t: number, seg: number, pos: number, span: number,
+   *                keys: Array<{ key: string, correct: boolean }> }>}
+   */
+  strikes: [],
+  /** Text-segment counter — bumped whenever the target text changes. */
+  strikeSegment: 0,
   prevTypedLength: 0,
   /** Furthest input length reached for the current text (metrics v2). */
   maxTypedLength: 0,
@@ -94,6 +104,39 @@ export function computeInputDelta(typed, target, maxTypedLength = 0) {
 }
 
 /**
+ * Timestamped strike record for one input event (input pipeline v2).
+ * Mirrors computeInputDelta's first-strike semantics exactly: only events
+ * that reach NEW positions of the target produce a strike — backspaces,
+ * corrections, and retypes of already-scored ground return null. A
+ * multi-char forward jump (paste / IME commit / dead-key composition) is
+ * ONE strike whose span covers every newly scored position; positions past
+ * the target end are counted in span but carry no key (no target char).
+ * @param {string} typed current full input value
+ * @param {string} target text the user is supposed to type
+ * @param {number} maxTypedLength furthest input length reached BEFORE this event
+ * @param {number} tMs timestamp (ms since test start)
+ * @param {number} seg text-segment counter (bumped on every new target text)
+ * @returns {{ t: number, seg: number, pos: number, span: number,
+ *             keys: Array<{ key: string, correct: boolean }> } | null}
+ */
+export function buildStrike(typed, target, maxTypedLength, tMs, seg) {
+  if (typed.length <= maxTypedLength) return null;
+  const keys = [];
+  for (let i = maxTypedLength; i < typed.length; i++) {
+    if (i < target.length) {
+      keys.push({ key: target[i], correct: typed[i] === target[i] });
+    }
+  }
+  return {
+    t: tMs,
+    seg,
+    pos: maxTypedLength,
+    span: typed.length - maxTypedLength,
+    keys,
+  };
+}
+
+/**
  * Additive per-key record for the heatmap. Only forward keystrokes within
  * the target bounds produce a record — backspaces and overflow are ignored.
  * The record is keyed by the character the user was SUPPOSED to type.
@@ -122,6 +165,8 @@ export function startTest() {
   state.totalChars = 0;
   state.errors = 0;
   state.keystrokes = [];
+  state.strikes = [];
+  state.strikeSegment = 0;
   state.prevTypedLength = 0;
   state.maxTypedLength = 0;
   state.isComposing = false;
@@ -206,6 +251,17 @@ export function handleInput() {
   state.correctChars += delta.correctChars;
   state.errors += delta.errors;
 
+  // Timestamped strike log (input pipeline v2) — built from the SAME
+  // pre-update maxTypedLength as the delta so the two can never disagree.
+  const strike = buildStrike(
+    typed,
+    target,
+    state.maxTypedLength,
+    state.startTime ? Date.now() - state.startTime : 0,
+    state.strikeSegment
+  );
+  if (strike) state.strikes.push(strike);
+
   const keystroke = extractKeystroke(typed, target, state.prevTypedLength);
   if (keystroke) state.keystrokes.push(keystroke);
   state.prevTypedLength = typed.length;
@@ -243,6 +299,9 @@ function advanceToNextText() {
   el.wordInput.value = '';
   state.prevTypedLength = 0;
   state.maxTypedLength = 0;
+  // New target text → new strike segment, so position-adjacency (bigram
+  // latency) can never be computed across two different texts.
+  state.strikeSegment++;
   el.wordText.textContent = state.currentWord;
   displayWord('', state.currentWord);
 }
@@ -265,6 +324,8 @@ export function resetGame() {
   el.wordInput.value = '';
   state.prevTypedLength = 0;
   state.maxTypedLength = 0;
+  state.strikes = [];
+  state.strikeSegment = 0;
   state.isComposing = false;
   el.wordText.textContent = 'Press Start to begin';
   el.wordDisplay.classList.remove('correct', 'incorrect', 'coding');
