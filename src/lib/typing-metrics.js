@@ -58,25 +58,60 @@ export function calculateAccuracy(correctChars, totalChars) {
 }
 
 /**
+ * Minimum number of valid inter-keystroke intervals required before a
+ * consistency score is reported. Below this, the coefficient of variation
+ * is statistically meaningless noise — the metric returns null (rendered
+ * as "—") instead of a fake number. 10 intervals ≈ 11 keystrokes ≈ two
+ * short words: the smallest sample where CV starts to stabilize.
+ */
+export const MIN_CONSISTENCY_INTERVALS = 10;
+
+/**
  * Consistency: how steady the typing rhythm is, expressed 0..100.
- * Computed from inter-keystroke interval coefficient of variation.
  *
- * KEEP even though no caller supplies real intervals yet: Wave 3 rebuilds
- * the input pipeline with keystroke timestamps and wires this metric in.
+ * Formula (documented in docs/v3/METRICS_V2.md § Consistency):
+ *   CV = stdev(intervals) / mean(intervals)   (population stdev)
+ *   consistency = clamp(0, 100, round((1 - CV) * 100))
+ * where intervals are the milliseconds between successive scored strikes.
+ * A metronome-steady rhythm has CV 0 → 100; a rhythm whose variation is
+ * as large as its mean (CV >= 1) scores 0.
+ *
+ * Min-sample rule: fewer than MIN_CONSISTENCY_INTERVALS valid intervals
+ * (non-finite and non-positive values are discarded first) returns null —
+ * short samples must never fabricate a score.
  * @param {number[]} intervalsMs — time between successive keystrokes
- * @returns {number}
+ * @returns {number | null} 0..100, or null when the sample is too small
  */
 export function calculateConsistency(intervalsMs) {
-  if (!Array.isArray(intervalsMs) || intervalsMs.length < 2) return 0;
+  if (!Array.isArray(intervalsMs)) return null;
   const valid = intervalsMs.filter((v) => Number.isFinite(v) && v > 0);
-  if (valid.length < 2) return 0;
+  if (valid.length < MIN_CONSISTENCY_INTERVALS) return null;
   const mean = valid.reduce((s, v) => s + v, 0) / valid.length;
-  if (mean === 0) return 0;
+  if (mean === 0) return null;
   const variance =
     valid.reduce((s, v) => s + (v - mean) ** 2, 0) / valid.length;
   const stdev = Math.sqrt(variance);
   const cv = stdev / mean;
   return Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
+}
+
+/**
+ * Inter-strike intervals from a session strike log (see session.buildStrike).
+ * Consecutive pairs with a non-finite timestamp on either side are skipped
+ * so a malformed record can never poison the consistency sample with NaN.
+ * @param {Array<{ t: number }>} strikes — chronological strike records
+ * @returns {number[]} milliseconds between successive strikes
+ */
+export function strikeIntervalsMs(strikes) {
+  if (!Array.isArray(strikes) || strikes.length < 2) return [];
+  const intervals = [];
+  for (let i = 1; i < strikes.length; i++) {
+    const prev = strikes[i - 1]?.t;
+    const cur = strikes[i]?.t;
+    if (!Number.isFinite(prev) || !Number.isFinite(cur)) continue;
+    intervals.push(cur - prev);
+  }
+  return intervals;
 }
 
 /**
