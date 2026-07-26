@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Typing Practice — Type Real Python Code</title>
+    <meta name="description" content="Type real Python — list comprehensions, context managers, classes, and lambdas. Free in-browser practice for colons, underscores, and brackets." />
+    <meta name="author" content="Kazi Musharraf" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://11-web-keyboard-practice.vercel.app/python-typing-practice" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Python Typing Practice — Type Real Python Code" />
+    <meta property="og:description" content="Type real Python — list comprehensions, context managers, classes, and lambdas. Free in-browser practice for colons, underscores, and brackets." />
+    <meta property="og:url" content="https://11-web-keyboard-practice.vercel.app/python-typing-practice" />
+    <meta property="og:site_name" content="MK TypeSprint" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Python Typing Practice — Type Real Python Code" />
+    <meta name="twitter:description" content="Type real Python — list comprehensions, context managers, classes, and lambdas. Free in-browser practice for colons, underscores, and brackets." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨️</text></svg>" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    <meta name="theme-color" content="#8b5cf6" />
+
+    <!-- FAQPage schema — mirrors the visible FAQ section below, all questions -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What kind of Python code will I type?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ten real single-line statements: list comprehensions, context managers, class and function definitions, imports, try/except handling, async calls, and lambdas. Each round serves one snippet, character-exact."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why practice typing Python specifically?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Python leans on characters that prose never trains: underscores in snake_case names, colons after every block header, double quotes, square brackets, and double-underscore names like __init__. Drilling them keeps your eyes on the logic instead of the keyboard."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is this useful if I'm still learning Python?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It's typing practice, not a tutorial — but repeatedly typing correct, idiomatic lines does build familiarity with how real Python reads. Beginners should start slow and prioritize accuracy over speed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I start Python typing practice?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Open the typing test, select Code mode, choose Python from the language dropdown, and press Start. Results are saved to your local history like any other test."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <script type="module" src="/src/growth-page.js"></script>
+  </head>
+
+  <body>
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-inner">
+        <a href="/" class="nav-brand">
+          <div class="nav-logo">TS</div>
+          <div class="nav-title">Type<span>Sprint</span></div>
+        </a>
+        <div class="nav-links">
+          <a href="/typing-test" class="nav-link">Typing Test</a>
+          <a href="/code-typing-practice" class="nav-link active">Code Practice</a>
+          <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div class="hero-badge">🐍 Real Python • Character-exact</div>
+      <h1>Python Typing Practice</h1>
+      <p>snake_case, colons, brackets, and dunder names — Python's keystrokes are nothing like prose. Practice on real statements until they flow.</p>
+      <a class="hero-cta" href="/">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Practice Python Typing
+      </a>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:12px">Opens the test — choose <strong>Code</strong> mode, then <strong>Python</strong>.</p>
+    </div>
+
+    <div class="content-section" style="padding-bottom:40px">
+      <div class="section-card prose">
+        <h2>What you'll type</h2>
+        <p>The Python bank contains ten real single-line statements. Two examples, exactly as served:</p>
+        <div class="code-sample">result = [x ** 2 for x in range(10) if x % 2 == 0]</div>
+        <div class="code-sample">with open("data.json", "r") as f: data = json.load(f)</div>
+        <p>Comprehensions, context managers, class and function definitions, imports, exception handling, an async call, and a lambda — the statements you actually type in day-to-day Python work. Snippets are single lines, so the drill targets symbol fluency rather than block indentation.</p>
+      </div>
+
+      <div class="section-card prose">
+        <h2>What Python typing trains</h2>
+        <ul>
+          <li><strong>Underscores</strong> — snake_case puts Shift+hyphen inside almost every identifier.</li>
+          <li><strong>Colons</strong> — every def, class, if, for, and with ends its header with one.</li>
+          <li><strong>Brackets and quotes</strong> — indexing, comprehensions, and string literals mix `[]`, `()`, and `"` constantly.</li>
+          <li><strong>Dunder names</strong> — typing __init__ cleanly is a genuine two-hand coordination drill.</li>
+        </ul>
+        <p>Scoring is first-strike: each character position counts once, on your first attempt, so a fumbled bracket stays visible in your accuracy. Details on the <a href="/typing-accuracy-test">typing accuracy test</a> page.</p>
+      </div>
+
+      <div class="section-card">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <div class="faq-q">What kind of Python code will I type?</div>
+          <div class="faq-a">Ten real single-line statements: list comprehensions, context managers, class and function definitions, imports, try/except handling, async calls, and lambdas. Each round serves one snippet, character-exact.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Why practice typing Python specifically?</div>
+          <div class="faq-a">Python leans on characters that prose never trains: underscores in snake_case names, colons after every block header, double quotes, square brackets, and double-underscore names like __init__. Drilling them keeps your eyes on the logic instead of the keyboard.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is this useful if I'm still learning Python?</div>
+          <div class="faq-a">It's typing practice, not a tutorial — but repeatedly typing correct, idiomatic lines does build familiarity with how real Python reads. Beginners should start slow and prioritize accuracy over speed.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How do I start Python typing practice?</div>
+          <div class="faq-a">Open the <a href="/" style="color:var(--primary)">typing test</a>, select Code mode, choose Python from the language dropdown, and press Start. Results are saved to your local history like any other test.</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>Related pages</h2>
+        <ul class="related-links">
+          <li><a href="/code-typing-practice">Code Typing Practice (all languages)</a></li>
+          <li><a href="/javascript-typing-practice">JavaScript Typing Practice</a></li>
+          <li><a href="/typing-accuracy-test">Typing Accuracy Test</a></li>
+          <li><a href="/typing-test">Typing Speed Test</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="footer" role="contentinfo">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
+          MK TypeSprint
+        </div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Take the Test</a>
+          <a href="https://github.com/mk-knight23/MK-TypeSprint" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+        </div>
+        <div class="footer-pages">
+          <a href="/typing-test" class="footer-link">Typing Test</a>
+          <a href="/typing-accuracy-test" class="footer-link">Accuracy Test</a>
+          <a href="/code-typing-practice" class="footer-link">Code Typing</a>
+          <a href="/python-typing-practice" class="footer-link">Python</a>
+          <a href="/javascript-typing-practice" class="footer-link">JavaScript</a>
+          <a href="/average-typing-speed" class="footer-link">Average Typing Speed</a>
+          <a href="/how-to-type-faster" class="footer-link">How to Type Faster</a>
+        </div>
+        <div class="footer-copy">© 2026 <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">Kazi Musharraf</a>. Free and open-source typing practice platform.</div>
+      </div>
+    </footer>
+  </body>
+</html>
