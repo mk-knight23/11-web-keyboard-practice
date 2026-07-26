@@ -47,6 +47,11 @@ function sitemapPlugin() {
 
 export default defineConfig({
   root: '.',
+  // MPA: no SPA history fallback in dev/preview. Without this, vite preview
+  // silently serves the homepage for slugged page URLs (e.g. /typing-test
+  // without a trailing slash), masking routing problems. Production routing
+  // is Vercel's: filesystem (cleanUrls) first, then the vercel.json rewrite.
+  appType: 'mpa',
   plugins: [sitemapPlugin()],
   build: {
     outDir: 'dist',
