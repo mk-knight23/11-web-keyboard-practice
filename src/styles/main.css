@@ -986,3 +986,76 @@ select:focus, .btn-option:focus {
   .heatmap-row { gap: 4px; }
   .history-actions { width: 100%; }
 }
+
+/* ============================================
+   Wave 2.5 — growth pages (static landings)
+   ============================================ */
+a.hero-cta { text-decoration: none; }
+
+.prose p { margin-bottom: 12px; }
+.prose p:last-child { margin-bottom: 0; }
+.prose h3 { margin-top: 20px; }
+.prose a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.prose a:hover { text-decoration: underline; }
+
+.code-sample {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  background: var(--bg-surface-alt);
+  border: var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin: 14px 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.table-scroll { overflow-x: auto; }
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 14px;
+}
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.data-table th {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.data-table td strong { color: var(--text-primary); }
+
+.related-links {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.related-links a {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.related-links a:hover { text-decoration: underline; }
+
+.footer-pages {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  justify-content: center;
+  padding-top: 4px;
+}
