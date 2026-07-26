@@ -100,37 +100,13 @@
     </script>
 
     <!--
-      Analytics activation policy:
-      - GTM: only injected when VITE_GTM_ID is a real GTM-XXX id at build time.
-      - GA4: only injected when VITE_GA4_ID is a G-XXXX id at build time.
-      - Vercel Web Analytics + Speed Insights: enable in the Vercel project dashboard;
-        Vercel injects the script server-side. No repo change needed.
-      Nothing is loaded when env vars are unset. See docs/ANALYTICS.md.
+      Analytics activation policy: GTM/GA4 load only when VITE_GTM_ID /
+      VITE_GA4_ID are real ids at build time — see src/analytics-loader.js
+      (bundled module; kept out of inline <script> so the CSP script-src
+      needs no 'unsafe-inline') and docs/ANALYTICS.md.
+      Vercel Web Analytics + Speed Insights: enable in the Vercel dashboard;
+      the script is injected server-side, no repo change needed.
     -->
-    <script>
-      (function(){
-        var GTM_ID = "%VITE_GTM_ID%";
-        if (GTM_ID && GTM_ID.charAt(0) !== '%' && /^GTM-[A-Z0-9]+$/.test(GTM_ID)) {
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({'gtm.start': Date.now(), event: 'gtm.js'});
-          var s = document.createElement('script');
-          s.async = true;
-          s.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
-          document.head.appendChild(s);
-        }
-        var GA4_ID = "%VITE_GA4_ID%";
-        if (GA4_ID && GA4_ID.charAt(0) !== '%' && /^G-[A-Z0-9]+$/.test(GA4_ID)) {
-          var g = document.createElement('script');
-          g.async = true;
-          g.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
-          document.head.appendChild(g);
-          window.dataLayer = window.dataLayer || [];
-          window.gtag = function(){ window.dataLayer.push(arguments); };
-          window.gtag('js', new Date());
-          window.gtag('config', GA4_ID, { anonymize_ip: true });
-        }
-      })();
-    </script>
 
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#8b5cf6" />
@@ -142,14 +118,14 @@
     <!-- Navigation -->
     <nav class="nav" role="navigation" aria-label="Main navigation">
       <div class="nav-inner">
-        <a href="#" class="nav-brand" onclick="showSection('main'); return false;">
+        <a href="/" class="nav-brand" data-section="main">
           <div class="nav-logo">TS</div>
           <div class="nav-title">Type<span>Sprint</span></div>
         </a>
         <div class="nav-links">
-          <a href="#" class="nav-link active" onclick="showSection('main'); return false;">Practice</a>
-          <a href="#" class="nav-link" onclick="showSection('guide'); return false;">Typing Guide</a>
-          <a href="#" class="nav-link" onclick="showSection('about'); return false;">About</a>
+          <a href="/" class="nav-link active" data-section="main">Practice</a>
+          <a href="#" class="nav-link" data-section="guide">Typing Guide</a>
+          <a href="#" class="nav-link" data-section="about">About</a>
         </div>
         <div class="nav-actions">
           <button class="nav-btn" id="themeToggle" aria-label="Toggle dark mode">
@@ -174,7 +150,7 @@
         <div class="hero-badge">⚡ Free • No signup • Instant results</div>
         <h1>Test Your <span class="accent">Typing Speed</span></h1>
         <p>Measure your WPM, track your progress, and practice with real code. Free, open-source, and private — your data stays in your browser.</p>
-        <button class="hero-cta" id="heroCta" onclick="document.getElementById('startBtn').click(); document.getElementById('wordInput').scrollIntoView({behavior:'smooth', block:'center'});">
+        <button class="hero-cta" id="heroCta">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           Start Typing Test
         </button>
@@ -527,9 +503,9 @@
           MK TypeSprint
         </div>
         <div class="footer-links">
-          <a href="#" class="footer-link" onclick="showSection('main'); return false;">Practice</a>
-          <a href="#" class="footer-link" onclick="showSection('guide'); return false;">Typing Guide</a>
-          <a href="#" class="footer-link" onclick="showSection('about'); return false;">About</a>
+          <a href="/" class="footer-link" data-section="main">Practice</a>
+          <a href="#" class="footer-link" data-section="guide">Typing Guide</a>
+          <a href="#" class="footer-link" data-section="about">About</a>
           <a href="https://github.com/mk-knight23/MK-TypeSprint" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
         </div>
         <div class="footer-copy">© 2026 <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">Kazi Musharraf</a>. Free and open-source typing practice platform.</div>
