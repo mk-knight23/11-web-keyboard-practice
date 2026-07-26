@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing Accuracy Test — Error Rate, Not Just Speed</title>
+    <meta name="description" content="Test typing accuracy with first-strike scoring: every character is scored once, so backspaces and retypes can't inflate your percentage. Free, no signup." />
+    <meta name="author" content="Kazi Musharraf" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://11-web-keyboard-practice.vercel.app/typing-accuracy-test" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Typing Accuracy Test — Error Rate, Not Just Speed" />
+    <meta property="og:description" content="Test typing accuracy with first-strike scoring: every character is scored once, so backspaces and retypes can't inflate your percentage. Free, no signup." />
+    <meta property="og:url" content="https://11-web-keyboard-practice.vercel.app/typing-accuracy-test" />
+    <meta property="og:site_name" content="MK TypeSprint" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Typing Accuracy Test — Error Rate, Not Just Speed" />
+    <meta name="twitter:description" content="Test typing accuracy with first-strike scoring: every character is scored once, so backspaces and retypes can't inflate your percentage. Free, no signup." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨️</text></svg>" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    <meta name="theme-color" content="#8b5cf6" />
+
+    <!-- FAQPage schema — mirrors the visible FAQ section below, all questions -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How is typing accuracy calculated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Accuracy is the share of character positions you typed correctly on your first attempt. Every position in the passage is scored exactly once, on the first keystroke that reaches it — later corrections don't change the score for that position."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do backspaces lower my accuracy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No — and they can't raise it either. Deleting characters isn't counted at all, and retyping a position that was already scored adds nothing. The error you originally made stays in your error count."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is a good typing accuracy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Aim for 95% or better before chasing speed. Skilled typists usually hold 97-99%. Below 95%, the time you lose noticing and fixing errors typically outweighs any raw speed gain."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why is my accuracy lower here than on other typing tests?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Many tests re-score a position after you correct it, which lets backspacing hide mistakes. This test scores each position once, on the first attempt, so the percentage reflects what your fingers actually did."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <script type="module" src="/src/growth-page.js"></script>
+  </head>
+
+  <body>
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-inner">
+        <a href="/" class="nav-brand">
+          <div class="nav-logo">TS</div>
+          <div class="nav-title">Type<span>Sprint</span></div>
+        </a>
+        <div class="nav-links">
+          <a href="/typing-test" class="nav-link">Typing Test</a>
+          <a href="/code-typing-practice" class="nav-link">Code Practice</a>
+          <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <div class="hero-badge">🎯 First-strike scoring • No signup</div>
+      <h1>Typing Accuracy Test</h1>
+      <p>Speed means little if every third word needs fixing. This test measures the error rate your fingers actually produce — with scoring that corrections can't game.</p>
+      <a class="hero-cta" href="/">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Take the Accuracy Test
+      </a>
+    </div>
+
+    <div class="content-section" style="padding-bottom:40px">
+      <div class="section-card prose">
+        <h2>How accuracy is scored here</h2>
+        <p>Most typing tests quietly forgive corrections: backspace over a mistake, retype it, and the error disappears from your percentage. That produces flattering numbers and hides the habits slowing you down.</p>
+        <p>TypeSprint uses <strong>first-strike scoring</strong>: every character position in the passage is scored exactly once, on the first keystroke that reaches it. What each input event does to your counters:</p>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>Event</th><th>Characters</th><th>Correct</th><th>Errors</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>First keystroke at a new position, matches the text</td><td>+1</td><td>+1</td><td>—</td></tr>
+              <tr><td>First keystroke at a new position, wrong character</td><td>+1</td><td>—</td><td>+1</td></tr>
+              <tr><td>Typing past the end of the passage</td><td>+1</td><td>—</td><td>+1</td></tr>
+              <tr><td>Backspace / deletion</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>Retyping an already-scored position</td><td>—</td><td>—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Accuracy is simply <strong>correct ÷ scored positions</strong>. Corrections cost you the error you made; they can't retroactively erase it — and a type-delete-retype loop adds nothing, so the percentage can't be farmed.</p>
+      </div>
+
+      <div class="section-card prose">
+        <h2>Why accuracy beats raw speed</h2>
+        <p>Every error costs you at least three keystrokes: the wrong character, the backspace, and the retype — plus the moment it takes to notice. A 70 WPM typist at 90% accuracy usually finishes real work slower than a 60 WPM typist at 98%.</p>
+        <p>That's why the test reports Net WPM (correct characters only) next to Raw WPM (everything typed). A large gap between them is an accuracy problem wearing a speed costume. The <a href="/typing-test">typing speed test</a> page explains all four reported metrics.</p>
+      </div>
+
+      <div class="section-card prose">
+        <h2>How to practice accuracy deliberately</h2>
+        <p>Three things in the app are built for exactly this:</p>
+        <ul>
+          <li><strong>Slow down one gear.</strong> Run the 60-second test at a pace where you stay above 95%, and only speed up when the percentage holds.</li>
+          <li><strong>Check the key accuracy heatmap.</strong> Your history view includes a per-key heatmap showing which keys you actually miss.</li>
+          <li><strong>Use Weak Keys mode.</strong> It biases practice words toward your lowest-accuracy keys, so you drill the problem instead of re-practicing what you already do well.</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <div class="faq-q">How is typing accuracy calculated?</div>
+          <div class="faq-a">Accuracy is the share of character positions you typed correctly on your first attempt. Every position in the passage is scored exactly once, on the first keystroke that reaches it — later corrections don't change the score for that position.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Do backspaces lower my accuracy?</div>
+          <div class="faq-a">No — and they can't raise it either. Deleting characters isn't counted at all, and retyping a position that was already scored adds nothing. The error you originally made stays in your error count.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What is a good typing accuracy?</div>
+          <div class="faq-a">Aim for 95% or better before chasing speed. Skilled typists usually hold 97–99%. Below 95%, the time you lose noticing and fixing errors typically outweighs any raw speed gain.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Why is my accuracy lower here than on other typing tests?</div>
+          <div class="faq-a">Many tests re-score a position after you correct it, which lets backspacing hide mistakes. This test scores each position once, on the first attempt, so the percentage reflects what your fingers actually did.</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>Related pages</h2>
+        <ul class="related-links">
+          <li><a href="/typing-test">Typing Speed Test</a></li>
+          <li><a href="/how-to-type-faster">How to Type Faster</a></li>
+          <li><a href="/average-typing-speed">Average Typing Speed &amp; WPM Benchmarks</a></li>
+          <li><a href="/code-typing-practice">Code Typing Practice</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="footer" role="contentinfo">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
+          MK TypeSprint
+        </div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Take the Test</a>
+          <a href="https://github.com/mk-knight23/MK-TypeSprint" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+        </div>
+        <div class="footer-pages">
+          <a href="/typing-test" class="footer-link">Typing Test</a>
+          <a href="/typing-accuracy-test" class="footer-link">Accuracy Test</a>
+          <a href="/code-typing-practice" class="footer-link">Code Typing</a>
+          <a href="/python-typing-practice" class="footer-link">Python</a>
+          <a href="/javascript-typing-practice" class="footer-link">JavaScript</a>
+          <a href="/average-typing-speed" class="footer-link">Average Typing Speed</a>
+          <a href="/how-to-type-faster" class="footer-link">How to Type Faster</a>
+        </div>
+        <div class="footer-copy">© 2026 <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">Kazi Musharraf</a>. Free and open-source typing practice platform.</div>
+      </div>
+    </footer>
+  </body>
+</html>
