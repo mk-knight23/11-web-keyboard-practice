@@ -27,10 +27,16 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <meta name="theme-color" content="#0B1220" />
+
+    <!-- First-paint theme stamping: classic blocking script from self (CSP
+         script-src stays clean). Runs before the stylesheet paints and
+         updates the theme-color meta above per theme. -->
+    <script src="/theme-boot.js"></script>
 
     <link rel="stylesheet" href="/src/styles/main.css" />
-    <meta name="theme-color" content="#8b5cf6" />
 
     <!-- FAQPage schema — mirrors the visible FAQ section below, all questions -->
     <script type="application/ld+json">
@@ -81,13 +87,27 @@
     <nav class="nav" role="navigation" aria-label="Main navigation">
       <div class="nav-inner">
         <a href="/" class="nav-brand">
-          <div class="nav-logo">TS</div>
-          <div class="nav-title">Type<span>Sprint</span></div>
+          <span class="wordmark">MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span></span>
         </a>
-        <div class="nav-links">
-          <a href="/typing-test" class="nav-link">Typing Test</a>
-          <a href="/code-typing-practice" class="nav-link active">Code Practice</a>
-          <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+        <button class="nav-menu-toggle" id="navMenuToggle" type="button" aria-expanded="false" aria-controls="navMenu">
+          <span aria-hidden="true">☰</span> Menu
+        </button>
+        <div class="nav-menu" id="navMenu">
+          <div class="nav-links">
+            <a href="/typing-test" class="nav-link">Typing Test</a>
+            <a href="/code-typing-practice" class="nav-link active">Code Practice</a>
+            <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+          </div>
+          <div class="nav-links nav-links-secondary" aria-label="All typing pages">
+            <a href="/" class="nav-link">Practice Test</a>
+            <a href="/typing-test" class="nav-link">Typing Test</a>
+            <a href="/typing-accuracy-test" class="nav-link">Accuracy Test</a>
+            <a href="/code-typing-practice" class="nav-link">Code Typing</a>
+            <a href="/python-typing-practice" class="nav-link">Python</a>
+            <a href="/javascript-typing-practice" class="nav-link">JavaScript</a>
+            <a href="/average-typing-speed" class="nav-link">Average Speed</a>
+            <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+          </div>
         </div>
       </div>
     </nav>
@@ -100,7 +120,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         Practice JavaScript Typing
       </a>
-      <p style="font-size:13px;color:var(--text-muted);margin-top:12px">Opens the test — choose <strong>Code</strong> mode; JavaScript is the default language.</p>
+      <p style="font-size:13px;color:var(--mk-text-muted);margin-top:12px">Opens the test — choose <strong>Code</strong> mode; JavaScript is the default language.</p>
     </div>
 
     <div class="content-section" style="padding-bottom:40px">
@@ -139,7 +159,7 @@
         </div>
         <div class="faq-item">
           <div class="faq-q">How do I start JavaScript typing practice?</div>
-          <div class="faq-a">Open the <a href="/" style="color:var(--primary)">typing test</a>, select Code mode, keep JavaScript selected in the language dropdown (it's the default), and press Start. Results are saved to your local history.</div>
+          <div class="faq-a">Open the <a href="/">typing test</a>, select Code mode, keep JavaScript selected in the language dropdown (it's the default), and press Start. Results are saved to your local history.</div>
         </div>
       </div>
 
@@ -157,8 +177,7 @@
     <footer class="footer" role="contentinfo">
       <div class="footer-inner">
         <div class="footer-brand">
-          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
-          MK TypeSprint
+          MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span>
         </div>
         <div class="footer-links">
           <a href="/" class="footer-link">Take the Test</a>
