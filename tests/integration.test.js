@@ -303,15 +303,17 @@ describe('storage write failure surfacing', () => {
   });
 
   it('shows a notice when the theme preference cannot be persisted', async () => {
+    // V3: the sun/moon toggle became a 3-option switcher (light/dark/hc)
+    // persisting to the mk.typesprint.theme.v1 family key.
     await bootApp();
     vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('quota exceeded', 'QuotaExceededError');
     });
 
-    document.getElementById('themeToggle').click();
+    document.querySelector('[data-set-theme="light"]').click();
 
-    // The toggle still applied visually (non-blocking)…
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    // The switch still applied visually (non-blocking)…
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     // …but the user was told it will not survive a reload.
     expect(document.getElementById('message').textContent).toBe(
       "Theme preference couldn't be saved — storage may be full"
@@ -717,8 +719,10 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
   it('Space starts a test only when focus is on the body, not on a control', async () => {
     const { state } = await bootApp();
 
-    // Focus a control (the theme toggle): Space must NOT hijack activation.
-    document.getElementById('themeToggle').focus();
+    // Focus a control (a theme-switch button — V3 replaced the old sun/moon
+    // toggle with the 3-option switcher): Space must NOT hijack activation.
+    const themeButton = document.querySelector('[data-set-theme="light"]');
+    themeButton.focus();
     document.dispatchEvent(
       new KeyboardEvent('keydown', {
         key: ' ',
@@ -729,7 +733,7 @@ describe('keyboard accessibility guards (a11y wave-2)', () => {
     expect(state.isRunning).toBe(false);
 
     // Focus on body (nothing interactive focused): Space starts the test.
-    document.getElementById('themeToggle').blur();
+    themeButton.blur();
     expect(document.activeElement).toBe(document.body);
     document.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -809,14 +813,165 @@ describe('boot-time migration and rendering', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 
-  it('theme toggle flips and persists through the storage layer', async () => {
+  it('theme switcher applies and persists under the mk family key', async () => {
+    // V3: signature default is dark (Deep Focus) — no system-preference
+    // fallback — and the choice persists as a raw string under
+    // mk.typesprint.theme.v1 (family spec) instead of typesprint:v1:theme.
+    await bootApp();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
+    document.querySelector('[data-set-theme="light"]').click();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(localStorage.getItem('mk.typesprint.theme.v1')).toBe('light');
+
+    document.querySelector('[data-set-theme="hc"]').click();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('hc');
+    expect(localStorage.getItem('mk.typesprint.theme.v1')).toBe('hc');
+    expect(
+      document
+        .querySelector('[data-set-theme="hc"]')
+        .getAttribute('aria-pressed')
+    ).toBe('true');
+    expect(
+      document
+        .querySelector('[data-set-theme="light"]')
+        .getAttribute('aria-pressed')
+    ).toBe('false');
+  });
+
+  it('migrates a pre-V3 mk-less theme to the family key on boot', async () => {
+    localStorage.setItem('typesprint:v1:theme', JSON.stringify('light'));
     await bootApp();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    document.getElementById('themeToggle').click();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(JSON.parse(localStorage.getItem('typesprint:v1:theme'))).toBe(
-      'dark'
+    expect(localStorage.getItem('mk.typesprint.theme.v1')).toBe('light');
+  });
+});
+
+describe('V3 display preferences (motion / transparency)', () => {
+  it('reduce-motion toggle stamps data-motion and persists', async () => {
+    await bootApp();
+    expect(document.documentElement.getAttribute('data-motion')).toBe('full');
+
+    document.getElementById('motionToggle').click();
+    expect(document.documentElement.getAttribute('data-motion')).toBe(
+      'reduced'
     );
+    expect(localStorage.getItem('mk.typesprint.motion.v1')).toBe('reduced');
+    expect(
+      document.getElementById('motionToggle').getAttribute('aria-pressed')
+    ).toBe('true');
+
+    document.getElementById('motionToggle').click();
+    expect(document.documentElement.getAttribute('data-motion')).toBe('full');
+  });
+
+  it('reduce-glass toggle stamps data-transparency and persists', async () => {
+    await bootApp();
+    expect(document.documentElement.getAttribute('data-transparency')).toBe(
+      'normal'
+    );
+
+    document.getElementById('transparencyToggle').click();
+    expect(document.documentElement.getAttribute('data-transparency')).toBe(
+      'reduced'
+    );
+    expect(localStorage.getItem('mk.typesprint.transparency.v1')).toBe(
+      'reduced'
+    );
+  });
+});
+
+describe('zen mode (data-focus)', () => {
+  it('toggle button and exit chip drive data-focus and focus management', async () => {
+    await bootApp();
+    expect(document.documentElement.getAttribute('data-focus')).toBe('normal');
+
+    document.getElementById('zenToggle').click();
+    expect(document.documentElement.getAttribute('data-focus')).toBe('zen');
+    expect(
+      document.getElementById('zenToggle').getAttribute('aria-pressed')
+    ).toBe('true');
+    // Focus lands on the exit chip — the only visible control.
+    expect(document.activeElement).toBe(document.getElementById('zenExit'));
+
+    document.getElementById('zenExit').click();
+    expect(document.documentElement.getAttribute('data-focus')).toBe('normal');
+    expect(document.activeElement).toBe(document.getElementById('zenToggle'));
+  });
+
+  it('Z toggles zen only when focus is not on an editable target', async () => {
+    await bootApp();
+
+    // Focus on body: Z enters zen.
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'z', bubbles: true })
+    );
+    expect(document.documentElement.getAttribute('data-focus')).toBe('zen');
+
+    // Inside the typing input, "z" is just a letter — never a toggle.
+    const { state } = await import('../src/session.js');
+    document.getElementById('startBtn').click();
+    expect(state.isRunning).toBe(true);
+    expect(document.activeElement).toBe(document.getElementById('wordInput'));
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'z', bubbles: true })
+    );
+    expect(document.documentElement.getAttribute('data-focus')).toBe('zen');
+  });
+
+  it('Escape exits zen last in the priority chain (after aborting a test)', async () => {
+    const { state } = await bootApp();
+    document.getElementById('zenToggle').click();
+    expect(document.documentElement.getAttribute('data-focus')).toBe('zen');
+
+    document.getElementById('startBtn').click();
+    expect(state.isRunning).toBe(true);
+
+    // First Escape aborts the running test but stays in zen…
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+    );
+    expect(state.isRunning).toBe(false);
+    expect(document.documentElement.getAttribute('data-focus')).toBe('zen');
+
+    // …the second Escape exits zen.
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+    );
+    expect(document.documentElement.getAttribute('data-focus')).toBe('normal');
+  });
+});
+
+describe('collapsible nav menu (mobile dead-end fix)', () => {
+  it('menu button toggles the nav menu open and closed', async () => {
+    await bootApp();
+    const toggle = document.getElementById('navMenuToggle');
+    const menu = document.getElementById('navMenu');
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.click();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.classList.contains('open')).toBe(true);
+
+    toggle.click();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(menu.classList.contains('open')).toBe(false);
+  });
+
+  it('growth pages are reachable from the nav menu', async () => {
+    await bootApp();
+    const menu = document.getElementById('navMenu');
+    for (const href of [
+      '/typing-test',
+      '/typing-accuracy-test',
+      '/code-typing-practice',
+      '/python-typing-practice',
+      '/javascript-typing-practice',
+      '/average-typing-speed',
+      '/how-to-type-faster',
+    ]) {
+      expect(menu.querySelector(`a[href="${href}"]`)).not.toBeNull();
+    }
   });
 });
 
