@@ -17,6 +17,10 @@ import {
   isTimedMode,
 } from './session.js';
 import { getNextText } from './content.js';
+import {
+  initHistoryStore,
+  setHistoryWriteErrorHandler,
+} from './lib/storage.js';
 import { shouldStartOnSpace, shouldAbortOnEscape } from './keyboard.js';
 import { getWeakPracticeWord, updateWeakKeyExplainer } from './practice.js';
 import { renderHeatmap } from './heatmap.js';
@@ -26,6 +30,7 @@ import { endTest, hideResultsModal } from './results.js';
 import {
   migrateLegacyData,
   loadPersistedData,
+  notifySaveFailure,
   updateStatsDisplay,
   renderHistory,
   deleteHistoryItem,
@@ -40,6 +45,15 @@ import { initAnalyticsLoader } from './analytics-loader.js';
 initAnalyticsLoader();
 initElements();
 migrateLegacyData();
+// History backend: prefer IndexedDB (higher entry cap, no quota pressure on
+// the rest of localStorage) with a one-time non-destructive migration. Must
+// run AFTER migrateLegacyData (legacy key → namespaced → IndexedDB) and
+// BEFORE loadPersistedData, which reads through the store's sync façade.
+// Top-level await: modern browsers only (matches the Vite build target);
+// when IndexedDB is unavailable the store falls back to localStorage.
+await initHistoryStore();
+// Async write-behind failures reuse the Wave 2 save-failure notice.
+setHistoryWriteErrorHandler(() => notifySaveFailure());
 loadPersistedData();
 setTestEndHandler(endTest);
 

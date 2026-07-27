@@ -4,7 +4,15 @@
  * unversioned keys are migrated once at startup by migrateLegacyData().
  */
 import { el, showMessage } from './ui.js';
-import { read, write, remove, exportAll, STORAGE_KEYS } from './lib/storage.js';
+import {
+  read,
+  write,
+  remove,
+  exportAll,
+  readHistory,
+  persistHistory,
+  STORAGE_KEYS,
+} from './lib/storage.js';
 import { escapeHtml, toFiniteNumber } from './sanitize.js';
 import { METRICS_VERSION } from './lib/typing-metrics.js';
 
@@ -113,9 +121,13 @@ export function migrateStatsToV2(raw) {
   };
 }
 
-/** Load persisted history + stats into module state. Call after migration. */
+/**
+ * Load persisted history + stats into module state. Call after
+ * migrateLegacyData() and initHistoryStore() — history reads go through
+ * the store's sync façade (IndexedDB-backed when available).
+ */
 export function loadPersistedData() {
-  const loadedHistory = read(STORAGE_KEYS.HISTORY, []);
+  const loadedHistory = readHistory();
   history = Array.isArray(loadedHistory) ? loadedHistory : [];
   const loadedStats = read(STORAGE_KEYS.STATS, null);
   stats = migrateStatsToV2(loadedStats);
@@ -153,7 +165,10 @@ export function saveStats() {
 }
 
 export function saveHistory() {
-  const ok = write(STORAGE_KEYS.HISTORY, history);
+  // Sync façade: under IndexedDB this queues a write-behind put whose
+  // failures surface via the handler main.js registers (same notice);
+  // under the localStorage fallback it is the original synchronous write.
+  const ok = persistHistory(history);
   if (!ok) notifySaveFailure();
   return ok;
 }
@@ -209,6 +224,11 @@ export function deleteHistoryItem(i) {
 export function clearHistory() {
   if (confirm('Are you sure you want to clear all history?')) {
     history = [];
+    // Clear the canonical store (in-memory + IndexedDB write-behind, or
+    // the localStorage key under the fallback backend)…
+    persistHistory(history);
+    // …and drop the localStorage copy (the frozen pre-migration snapshot
+    // under IndexedDB) so no future backend fallback can resurrect it.
     remove(STORAGE_KEYS.HISTORY);
     // Also drop the legacy key so startup migration cannot resurrect it.
     try {
