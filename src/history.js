@@ -243,7 +243,7 @@ export function renderHistory() {
           <span>${escapeHtml(Number(e.accuracy) || 0)}%</span>
           <span>${Number.isFinite(e.consistency) ? escapeHtml(e.consistency) + '%' : '—'}</span>
           <span>${e.mode === 'word' ? 'Words' : e.mode === 'code' ? 'Code' : e.mode === 'quotes' ? 'Quote' : e.mode === 'weak' ? 'Weak Keys' : escapeHtml(Number(e.time) || 0) + 's'}</span>
-          <button data-history-index="${i}" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px" aria-label="Delete entry">×</button>
+          <button data-history-index="${i}" style="background:none;border:none;cursor:pointer;color:var(--mk-text-muted);font-size:16px" aria-label="Delete entry">×</button>
         </div>
       `
     )

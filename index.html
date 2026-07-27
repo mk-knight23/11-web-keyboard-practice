@@ -32,10 +32,10 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Weights audited against the CSS: Inter 400 (body default), 500, 600,
-         700, 800, 900; JetBrains Mono 400 (#wordInput.coding), 500
-         (.word-display), 700 (heatmap keys). Inter 300 / Mono 600 unused. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <!-- V3 "Deep Focus Instrument": JetBrains Mono is the brand voice
+         (wordmark, typing surface, stat digits — 400/500/700); Inter carries
+         UI labels and prose at 400/500/600 only (700–900 payload dropped). -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -125,33 +125,53 @@
     -->
 
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="theme-color" content="#0B1220" />
+
+    <!-- First-paint theme stamping: classic blocking script from self (CSP
+         script-src stays clean — no inline JS). Must run before the
+         stylesheet paints. Updates the theme-color meta above per theme. -->
+    <script src="/theme-boot.js"></script>
 
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
 
   <body>
-    <!-- Navigation -->
+    <!-- Navigation — glass (hidden in zen mode) -->
     <nav class="nav" role="navigation" aria-label="Main navigation">
       <div class="nav-inner">
         <a href="/" class="nav-brand" data-section="main">
-          <div class="nav-logo">TS</div>
-          <div class="nav-title">Type<span>Sprint</span></div>
+          <span class="wordmark">MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span></span>
         </a>
-        <div class="nav-links">
-          <a href="/" class="nav-link active" data-section="main">Practice</a>
-          <a href="/how-to-type-faster" class="nav-link">Typing Guide</a>
-          <a href="#" class="nav-link" data-section="about">About</a>
-        </div>
-        <div class="nav-actions">
-          <button class="nav-btn" id="themeToggle" aria-label="Toggle dark mode">
-            <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
+        <button class="nav-menu-toggle" id="navMenuToggle" type="button" aria-expanded="false" aria-controls="navMenu">
+          <span aria-hidden="true">☰</span> Menu
+        </button>
+        <div class="nav-menu" id="navMenu">
+          <div class="nav-links">
+            <a href="/" class="nav-link active" data-section="main">Practice</a>
+            <a href="/how-to-type-faster" class="nav-link">Guide</a>
+            <a href="#" class="nav-link" data-section="about">About</a>
+          </div>
+          <div class="nav-links nav-links-secondary" aria-label="Typing resources">
+            <a href="/typing-test" class="nav-link">Typing Test</a>
+            <a href="/typing-accuracy-test" class="nav-link">Accuracy Test</a>
+            <a href="/code-typing-practice" class="nav-link">Code Typing</a>
+            <a href="/python-typing-practice" class="nav-link">Python</a>
+            <a href="/javascript-typing-practice" class="nav-link">JavaScript</a>
+            <a href="/average-typing-speed" class="nav-link">Average Speed</a>
+          </div>
+          <span class="nav-spacer"></span>
+          <button class="zen-toggle" id="zenToggle" type="button" aria-pressed="false" title="Zen mode — hide everything except the test">
+            Zen <span class="kbd">Z</span>
           </button>
+          <div class="theme-switch" role="group" aria-label="Theme">
+            <button type="button" data-set-theme="light">Light</button>
+            <button type="button" data-set-theme="dark" aria-pressed="true">Dark</button>
+            <button type="button" data-set-theme="hc">High contrast</button>
+          </div>
+          <div class="pref-switch" role="group" aria-label="Display preferences">
+            <button type="button" id="motionToggle" aria-pressed="false">Reduce motion</button>
+            <button type="button" id="transparencyToggle" aria-pressed="false">Reduce glass</button>
+          </div>
         </div>
       </div>
     </nav>
@@ -287,7 +307,7 @@
               <button class="btn btn-secondary" id="exportDataBtn" style="padding:8px 16px;font-size:12px">Export JSON</button>
               <button class="btn btn-secondary" id="importDataBtn" style="padding:8px 16px;font-size:12px">Import JSON</button>
               <button class="btn btn-secondary" id="clearHistoryBtn" style="padding:8px 16px;font-size:12px">Clear All</button>
-              <button class="btn btn-secondary" id="deleteAllDataBtn" style="padding:8px 16px;font-size:12px;color:#ef4444">Delete All Data</button>
+              <button class="btn btn-secondary" id="deleteAllDataBtn" style="padding:8px 16px;font-size:12px;color:var(--mk-danger)">Delete All Data</button>
               <input type="file" id="importFileInput" accept="application/json,.json" style="display:none" aria-label="Import TypeSprint data file" />
             </div>
           </div>
@@ -335,8 +355,8 @@
               <div class="benchmark-label">Professional</div>
             </div>
           </div>
-          <p style="margin-top:12px;font-size:12px;color:var(--text-muted)">Source: Various typing speed studies. Benchmarks based on standard English text on QWERTY keyboards.</p>
-          <p style="margin-top:8px;font-size:13px"><a href="/average-typing-speed" style="color:var(--primary);font-weight:600;text-decoration:none">See the full benchmarks by level and profession, with sources →</a></p>
+          <p style="margin-top:12px;font-size:12px;color:var(--mk-text-muted)">Source: Various typing speed studies. Benchmarks based on standard English text on QWERTY keyboards.</p>
+          <p style="margin-top:8px;font-size:13px"><a href="/average-typing-speed">See the full benchmarks by level and profession, with sources →</a></p>
         </div>
 
         <!-- FAQ -->
@@ -374,7 +394,7 @@
         <div class="section-card">
           <h2>About MK TypeSprint</h2>
           <p>MK TypeSprint is a free, privacy-first typing practice platform built for people who want to improve their typing speed and accuracy. No accounts required, no data collected — your practice history stays in your browser.</p>
-          <p style="margin-top:12px">Built and maintained by <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;font-weight:700">Kazi Musharraf</a>, an AI Engineer, Systems Architect, and Full-Stack Developer.</p>
+          <p style="margin-top:12px">Built and maintained by <a href="https://www.mkazi.live" target="_blank" rel="noopener noreferrer">Kazi Musharraf</a>, an AI Engineer, Systems Architect, and Full-Stack Developer.</p>
 
           <h3 style="margin-top:24px">Features</h3>
           <ul>
@@ -393,7 +413,7 @@
           <p>MK TypeSprint does not collect, store, or transmit any personal data. Your typing history, statistics, and preferences are stored exclusively in your browser's localStorage. We do not use cookies for tracking. Optional analytics (when enabled) use privacy-friendly event names with no personal identifiers.</p>
 
           <h3 style="margin-top:20px">Contact</h3>
-          <p>For questions, suggestions, or issues, reach out via <a href="https://github.com/mk-knight23/MK-TypeSprint/issues" target="_blank" rel="noopener noreferrer" style="color:var(--primary)">GitHub Issues</a>.</p>
+          <p>For questions, suggestions, or issues, reach out via <a href="https://github.com/mk-knight23/MK-TypeSprint/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>.</p>
         </div>
 
         <div class="section-card">
@@ -450,12 +470,14 @@
       </div>
     </div>
 
+    <!-- Zen exit chip — the only chrome visible in zen mode -->
+    <button class="zen-exit" id="zenExit" type="button">esc — exit zen</button>
+
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
       <div class="footer-inner">
         <div class="footer-brand">
-          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
-          MK TypeSprint
+          MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span>
         </div>
         <div class="footer-links">
           <a href="/" class="footer-link" data-section="main">Practice</a>

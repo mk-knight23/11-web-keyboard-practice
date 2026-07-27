@@ -27,10 +27,16 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <meta name="theme-color" content="#0B1220" />
+
+    <!-- First-paint theme stamping: classic blocking script from self (CSP
+         script-src stays clean). Runs before the stylesheet paints and
+         updates the theme-color meta above per theme. -->
+    <script src="/theme-boot.js"></script>
 
     <link rel="stylesheet" href="/src/styles/main.css" />
-    <meta name="theme-color" content="#8b5cf6" />
 
     <!-- FAQPage schema — mirrors the visible FAQ section below, all questions -->
     <script type="application/ld+json">
@@ -81,13 +87,27 @@
     <nav class="nav" role="navigation" aria-label="Main navigation">
       <div class="nav-inner">
         <a href="/" class="nav-brand">
-          <div class="nav-logo">TS</div>
-          <div class="nav-title">Type<span>Sprint</span></div>
+          <span class="wordmark">MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span></span>
         </a>
-        <div class="nav-links">
-          <a href="/typing-test" class="nav-link">Typing Test</a>
-          <a href="/code-typing-practice" class="nav-link">Code Practice</a>
-          <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+        <button class="nav-menu-toggle" id="navMenuToggle" type="button" aria-expanded="false" aria-controls="navMenu">
+          <span aria-hidden="true">☰</span> Menu
+        </button>
+        <div class="nav-menu" id="navMenu">
+          <div class="nav-links">
+            <a href="/typing-test" class="nav-link">Typing Test</a>
+            <a href="/code-typing-practice" class="nav-link">Code Practice</a>
+            <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+          </div>
+          <div class="nav-links nav-links-secondary" aria-label="All typing pages">
+            <a href="/" class="nav-link">Practice Test</a>
+            <a href="/typing-test" class="nav-link">Typing Test</a>
+            <a href="/typing-accuracy-test" class="nav-link">Accuracy Test</a>
+            <a href="/code-typing-practice" class="nav-link">Code Typing</a>
+            <a href="/python-typing-practice" class="nav-link">Python</a>
+            <a href="/javascript-typing-practice" class="nav-link">JavaScript</a>
+            <a href="/average-typing-speed" class="nav-link">Average Speed</a>
+            <a href="/how-to-type-faster" class="nav-link">Type Faster</a>
+          </div>
         </div>
       </div>
     </nav>
@@ -165,7 +185,7 @@
         </div>
         <div class="faq-item">
           <div class="faq-q">How do I find out my typing speed?</div>
-          <div class="faq-a">Take a <a href="/typing-test" style="color:var(--primary)">timed typing test</a> — 60 seconds is the standard benchmark length. Repeat it a few times on different days; your true speed is the trend, not a single run.</div>
+          <div class="faq-a">Take a <a href="/typing-test">timed typing test</a> — 60 seconds is the standard benchmark length. Repeat it a few times on different days; your true speed is the trend, not a single run.</div>
         </div>
       </div>
 
@@ -183,8 +203,7 @@
     <footer class="footer" role="contentinfo">
       <div class="footer-inner">
         <div class="footer-brand">
-          <div class="nav-logo" style="width:28px;height:28px;font-size:10px">TS</div>
-          MK TypeSprint
+          MK_TypeSprint<span class="caret-glyph" aria-hidden="true">▍</span>
         </div>
         <div class="footer-links">
           <a href="/" class="footer-link">Take the Test</a>

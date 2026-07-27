@@ -9,10 +9,15 @@ export const el = {};
 /** Populate the element registry. Must run once after the DOM is parsed. */
 export function initElements() {
   Object.assign(el, {
-    themeToggle: document.getElementById('themeToggle'),
+    // V3 theme engine + zen + mobile nav controls
+    themeButtons: document.querySelectorAll('[data-set-theme]'),
+    motionToggle: document.getElementById('motionToggle'),
+    transparencyToggle: document.getElementById('transparencyToggle'),
+    zenToggle: document.getElementById('zenToggle'),
+    zenExit: document.getElementById('zenExit'),
+    navMenuToggle: document.getElementById('navMenuToggle'),
+    navMenu: document.getElementById('navMenu'),
     heroCta: document.getElementById('heroCta'),
-    sunIcon: document.getElementById('sunIcon'),
-    moonIcon: document.getElementById('moonIcon'),
     statWPM: document.getElementById('statWPM'),
     statRawWPM: document.getElementById('statRawWPM'),
     statAccuracy: document.getElementById('statAccuracy'),
@@ -60,6 +65,20 @@ export function initElements() {
   });
 }
 
+/**
+ * Reduced motion honored for real: JS-driven scrolling checks both the
+ * in-app setting (data-motion="reduced") and the OS media query, matching
+ * the CSS kill-switch in main.css.
+ * @returns {'auto' | 'smooth'}
+ */
+export function scrollBehavior() {
+  const reduced =
+    document.documentElement.getAttribute('data-motion') === 'reduced' ||
+    (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  return reduced ? 'auto' : 'smooth';
+}
+
 /** Switch between the main / guide / about page sections. */
 export function showSection(name) {
   document
@@ -78,7 +97,7 @@ export function showSection(name) {
       l.classList.add('active');
     }
   });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: scrollBehavior() });
 }
 
 /** Transient status toast above the word display. */

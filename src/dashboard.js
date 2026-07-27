@@ -72,7 +72,7 @@ export function renderDashboard() {
   const recent = history.slice(0, SPARKLINE_SESSIONS).reverse();
   const points = buildSparklinePoints(recent.map((e) => e.wpm));
   const sparkline = points
-    ? `<svg class="spark" viewBox="0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}" role="img" aria-label="WPM trend across your last ${recent.length} sessions" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    ? `<svg class="spark" viewBox="0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}" role="img" aria-label="WPM trend across your last ${recent.length} sessions" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="var(--mk-data-1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     : '<p class="dash-hint">Complete one more test to see your WPM trend.</p>';
 
   el.progressDashboard.innerHTML = `
