@@ -64,9 +64,7 @@ export function sanitizeHistoryEntry(raw) {
   // pre-Wave-3 entries and too-short samples render as "—" — so junk is
   // dropped rather than defaulted.
   if (typeof raw.consistency === 'number' && Number.isFinite(raw.consistency)) {
-    entry.consistency = Math.round(
-      Math.max(0, Math.min(100, raw.consistency))
-    );
+    entry.consistency = Math.round(Math.max(0, Math.min(100, raw.consistency)));
   }
   return entry;
 }

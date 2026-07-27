@@ -256,10 +256,7 @@ describe('aggregateKeyLatencies (wave 3 — data layer for the adaptive engine)'
   });
 
   it('includes wrong strikes — latency of the intended key is still latency', () => {
-    const strikes = [
-      strike(0, 0, 0, 'a'),
-      strike(150, 0, 1, 'b', false),
-    ];
+    const strikes = [strike(0, 0, 0, 'a'), strike(150, 0, 1, 'b', false)];
     expect(aggregateKeyLatencies(strikes).b).toEqual({
       count: 1,
       totalMs: 150,
