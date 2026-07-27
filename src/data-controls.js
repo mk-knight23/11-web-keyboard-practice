@@ -19,6 +19,7 @@ import {
   sanitizeStats,
   sanitizePerKey,
 } from './sanitize.js';
+import { resolveInitialTheme, setTheme } from './theme.js';
 
 const EXPORT_VERSION = 1;
 
@@ -74,7 +75,7 @@ export function sanitizeImportPayload(payload) {
   if (data.perKey) clean.perKey = sanitizePerKey(data.perKey);
   if (
     typeof data.theme === 'string' &&
-    ['light', 'dark'].includes(data.theme)
+    ['light', 'dark', 'hc'].includes(data.theme)
   ) {
     clean.theme = data.theme;
   }
@@ -86,6 +87,9 @@ function refreshAfterDataChange() {
   updateStatsDisplay();
   renderHistory();
   renderHeatmap();
+  // An import/delete may have changed the persisted theme — re-stamp
+  // without re-persisting (the storage layer already holds the truth).
+  setTheme(resolveInitialTheme(), { persist: false });
 }
 
 function handleExport() {
