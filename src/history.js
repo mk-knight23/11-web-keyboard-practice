@@ -16,7 +16,30 @@ import {
 import { escapeHtml, toFiniteNumber } from './sanitize.js';
 import { METRICS_VERSION } from './lib/typing-metrics.js';
 
-const HISTORY_LIMIT = 100;
+/**
+ * History cap — configurable, default 10,000 (Wave 3 lifted the old
+ * 100-entry ceiling once history moved to IndexedDB). The UI stays fast at
+ * this size because rendering is windowed (HISTORY_PAGE_SIZE rows behind a
+ * "show more" control), never O(history).
+ */
+export const DEFAULT_HISTORY_LIMIT = 10000;
+export const HISTORY_PAGE_SIZE = 50;
+let historyLimit = DEFAULT_HISTORY_LIMIT;
+
+/** @returns {number} the active history entry cap */
+export function getHistoryLimit() {
+  return historyLimit;
+}
+
+/**
+ * Configure the history entry cap. Invalid values (non-integers, zero,
+ * negatives) are ignored and the current limit is kept.
+ * @param {number} limit
+ */
+export function setHistoryLimit(limit) {
+  if (Number.isInteger(limit) && limit > 0) historyLimit = limit;
+}
+
 const DEFAULT_STATS = Object.freeze({
   tests: 0,
   bestWPM: 0,
@@ -129,6 +152,8 @@ export function migrateStatsToV2(raw) {
 export function loadPersistedData() {
   const loadedHistory = readHistory();
   history = Array.isArray(loadedHistory) ? loadedHistory : [];
+  // New dataset (boot, import, delete-all): restart the render window.
+  visibleHistoryCount = HISTORY_PAGE_SIZE;
   const loadedStats = read(STORAGE_KEYS.STATS, null);
   stats = migrateStatsToV2(loadedStats);
   // Persist the archival once so the legacy best survives future loads.
@@ -175,7 +200,9 @@ export function saveHistory() {
 
 export function addHistoryEntry(entry) {
   history.unshift(entry);
-  if (history.length > HISTORY_LIMIT) history.pop();
+  // Trim the oldest entries (history is newest-first). length assignment
+  // handles a lowered limit trimming more than one entry at once.
+  if (history.length > historyLimit) history.length = historyLimit;
   saveHistory();
 }
 
@@ -188,13 +215,26 @@ export function updateStatsDisplay() {
   el.statBest.textContent = stats.bestWPM;
 }
 
+/** Rows currently revealed by the windowed renderer. */
+let visibleHistoryCount = HISTORY_PAGE_SIZE;
+
+function showMoreHistory() {
+  visibleHistoryCount += HISTORY_PAGE_SIZE;
+  renderHistory();
+}
+
 export function renderHistory() {
   if (history.length === 0) {
     el.historySection.classList.remove('show');
     return;
   }
   el.historySection.classList.add('show');
+  // Windowed rendering: only the revealed slice hits the DOM, so a
+  // 10,000-entry history renders as fast as a 50-entry one.
+  const visible = Math.min(visibleHistoryCount, history.length);
+  const remaining = history.length - visible;
   const html = history
+    .slice(0, visible)
     .map(
       (e, i) => `
         <div class="history-item">
@@ -208,10 +248,19 @@ export function renderHistory() {
       `
     )
     .join('');
+  const showMore =
+    remaining > 0
+      ? `<button type="button" class="history-show-more" data-history-show-more>Show ${Math.min(HISTORY_PAGE_SIZE, remaining)} more (${remaining} remaining)</button>`
+      : '';
   el.historyList.innerHTML = `
     <div class="history-item"><span class="history-label">Date</span><span class="history-label">WPM</span><span class="history-label">Accuracy</span><span class="history-label">Consistency</span><span class="history-label">Mode</span><span class="history-label"></span></div>
     ${html}
+    ${showMore}
   `;
+  // The button is re-created on every render — wire it here so every
+  // caller of renderHistory() gets a working control without extra setup.
+  const moreBtn = el.historyList.querySelector('[data-history-show-more]');
+  if (moreBtn) moreBtn.addEventListener('click', showMoreHistory);
 }
 
 export function deleteHistoryItem(i) {
