@@ -41,6 +41,7 @@ export function initElements() {
     modalRawWPM: document.getElementById('modalRawWPM'),
     modalAccuracy: document.getElementById('modalAccuracy'),
     modalErrors: document.getElementById('modalErrors'),
+    modalConsistency: document.getElementById('modalConsistency'),
     modalCloseBtn: document.getElementById('modalCloseBtn'),
     modalRestartBtn: document.getElementById('modalRestartBtn'),
     modalPersonalBest: document.getElementById('modalPersonalBest'),

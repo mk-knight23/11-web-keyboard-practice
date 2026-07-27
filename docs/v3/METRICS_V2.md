@@ -82,3 +82,35 @@ Runs once in `migrateStatsToV2()` (`src/history.js`), invoked from
 After updating, the "Best WPM" stat resets to 0 and rebuilds from honest v2
 results. The previous best is preserved in stored data as `legacyBestWPM`.
 This is intentional: the old number was inflated and not comparable.
+
+## Consistency (Wave 3 — input pipeline v2)
+
+The Wave 3 input pipeline records a timestamp for every scored strike
+(a forward input event that reaches new positions of the target; see
+`buildStrike` in `src/session.js`). Consistency measures how steady the
+typing rhythm is:
+
+```
+intervals   = milliseconds between successive strikes (strikeIntervalsMs)
+valid       = intervals that are finite and > 0
+CV          = stdev(valid) / mean(valid)        (population stdev)
+consistency = clamp(0, 100, round((1 - CV) * 100))
+```
+
+- A metronome-steady rhythm (CV = 0) scores 100.
+- A rhythm whose variation equals its mean (CV >= 1) scores 0.
+- Pauses are honest: a long stop between strikes widens the intervals and
+  lowers the score. Composition (IME) input contributes one strike per
+  committed string, at commit time.
+
+**Min-sample rule:** fewer than `MIN_CONSISTENCY_INTERVALS` (10) valid
+intervals returns `null`, never a fabricated number. The UI renders null
+as "—". This is why:
+
+- history entries produced before Wave 3 (no timestamps recorded) show "—";
+- very short sessions (fewer than ~11 strikes) also show "—".
+
+New history entries store `consistency` (0..100) only when the sample was
+sufficient; the field is absent otherwise and absent on all pre-Wave-3
+entries. `metricsVersion` stays 2 — counting semantics are unchanged;
+consistency is additive.

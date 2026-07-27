@@ -387,6 +387,270 @@ describe('IME composition guard (metrics v2)', () => {
   });
 });
 
+describe('input pipeline v2 — timestamped strike log (wave 3)', () => {
+  function makeDispatcher(input) {
+    return function dispatch(value) {
+      vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+  }
+
+  it('records one timestamped strike per scored keystroke', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+    for (let i = 1; i <= 3; i++) dispatch(word.slice(0, i));
+
+    expect(state.strikes).toHaveLength(3);
+    // Fake timers advance exactly 100ms per dispatch.
+    expect(state.strikes.map((s) => s.t)).toEqual([100, 200, 300]);
+    expect(state.strikes.map((s) => s.pos)).toEqual([0, 1, 2]);
+    expect(state.strikes.every((s) => s.span === 1)).toBe(true);
+    expect(state.strikes.every((s) => s.seg === 0)).toBe(true);
+    expect(state.strikes[0].keys).toEqual([{ key: word[0], correct: true }]);
+  });
+
+  it('backspaces and corrected retypes produce no strike (mirrors scoring)', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    dispatch('~'); // wrong char → strike
+    dispatch(''); // backspace → no strike
+    dispatch(state.currentWord.slice(0, 1)); // retype → no strike
+
+    expect(state.strikes).toHaveLength(1);
+    expect(state.strikes[0].keys[0].correct).toBe(false);
+  });
+
+  it('advancing to the next word bumps the strike segment', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+
+    document.getElementById('startBtn').click();
+    const first = state.currentWord;
+    for (let i = 1; i <= first.length; i++) dispatch(first.slice(0, i));
+    const second = state.currentWord;
+    dispatch(second.slice(0, 1));
+
+    const segs = state.strikes.map((s) => s.seg);
+    expect(segs.slice(0, first.length).every((s) => s === 0)).toBe(true);
+    expect(segs[segs.length - 1]).toBe(1);
+    // The new word restarts positions from 0.
+    expect(state.strikes[state.strikes.length - 1].pos).toBe(0);
+  });
+
+  it('an IME commit is ONE strike spanning the committed string, stamped at commit time', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    // Provisional composition updates: no strikes, no timestamps.
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = 'ち';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = 'ちゃ';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(state.strikes).toHaveLength(0);
+
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.strikes).toHaveLength(1);
+    expect(state.strikes[0]).toMatchObject({ t: 300, pos: 0, span: 2 });
+    expect(state.strikes[0].keys).toHaveLength(2);
+  });
+
+  it('a trailing input event after compositionend adds no extra strike (Safari ordering)', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    dispatch('ち');
+    const committed = state.currentWord.slice(0, 2);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+    dispatch(committed); // Safari fires input AFTER compositionend
+
+    expect(state.strikes).toHaveLength(1);
+  });
+
+  it('dead-key composition scores and stamps the composed char exactly once', async () => {
+    // macOS/modern browsers: a dead key (e.g. Option+e) opens a composition
+    // with a provisional accent, then commits the composed character.
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    document.getElementById('startBtn').click();
+
+    input.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = '´'; // provisional dead-key accent
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(state.totalChars).toBe(0);
+    expect(state.strikes).toHaveLength(0);
+
+    const committed = state.currentWord.slice(0, 1);
+    vi.advanceTimersByTime(MS_PER_KEYSTROKE);
+    input.value = committed;
+    input.dispatchEvent(new Event('compositionend', { bubbles: true }));
+
+    expect(state.totalChars).toBe(1);
+    expect(state.correctChars).toBe(1);
+    expect(state.strikes).toHaveLength(1);
+    expect(state.strikes[0]).toMatchObject({ t: 200, pos: 0, span: 1 });
+  });
+
+  it('a legacy dead-key same-length replacement neither re-scores nor re-strikes', async () => {
+    // Older engines without composition events insert the accent then
+    // REPLACE it in place ('´' → 'é'): same input length, first-strike
+    // ground already scored — the replacement must count nothing.
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+    document.getElementById('startBtn').click();
+
+    dispatch('´'); // accent lands as a (wrong) scored strike
+    expect(state.totalChars).toBe(1);
+    expect(state.strikes).toHaveLength(1);
+
+    dispatch('é'); // in-place replacement: same length, no new ground
+    expect(state.totalChars).toBe(1);
+    expect(state.errors).toBe(1);
+    expect(state.strikes).toHaveLength(1);
+  });
+
+  it('reset clears the strike log', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const dispatch = makeDispatcher(input);
+    document.getElementById('startBtn').click();
+    dispatch(state.currentWord.slice(0, 1));
+    expect(state.strikes).toHaveLength(1);
+
+    document.getElementById('resetBtn').click();
+    expect(state.strikes).toHaveLength(0);
+    expect(state.strikeSegment).toBe(0);
+  });
+});
+
+describe('latency aggregation persistence (wave 3 — data layer)', () => {
+  it('persists per-key and bigram latency aggregates after a session', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    document.getElementById('startBtn').click();
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+    expect(state.isRunning).toBe(false);
+
+    const keyLatency = JSON.parse(
+      localStorage.getItem('typesprint:v1:keyLatency')
+    );
+    expect(keyLatency).toBeTruthy();
+    // Fake timers: every attributable interval is exactly 100ms.
+    for (const stat of Object.values(keyLatency)) {
+      expect(stat.totalMs / stat.count).toBe(100);
+    }
+
+    const bigramLatency = JSON.parse(
+      localStorage.getItem('typesprint:v1:bigramLatency')
+    );
+    expect(bigramLatency).toBeTruthy();
+    const bigrams = Object.keys(bigramLatency);
+    expect(bigrams.length).toBeGreaterThan(0);
+    expect(bigrams.every((b) => b.length === 2)).toBe(true);
+  });
+});
+
+describe('consistency metric display (wave 3)', () => {
+  it('shows the consistency score in the results modal and stores it on the entry', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    document.getElementById('startBtn').click();
+    for (let w = 0; w < 20; w++) {
+      const word = state.currentWord;
+      for (let i = 1; i <= word.length; i++) type(word.slice(0, i), word);
+    }
+    expect(state.isRunning).toBe(false);
+
+    // Fake timers advance exactly 100ms per keystroke: a metronome-steady
+    // rhythm scores a perfect 100.
+    expect(document.getElementById('modalConsistency').textContent).toBe(
+      '100%'
+    );
+    const stored = JSON.parse(localStorage.getItem('typesprint:v1:history'));
+    expect(stored[0].consistency).toBe(100);
+    // And the history list renders the score.
+    expect(document.getElementById('historyList').textContent).toContain(
+      '100%'
+    );
+  });
+
+  it('shows an em dash when the sample is too small for a score', async () => {
+    const { state } = await bootApp();
+    const input = document.getElementById('wordInput');
+    const counters = { total: 0, correct: 0, errors: 0 };
+    const type = makeTyper(input, counters);
+
+    // Timed mode, only 3 keystrokes → 2 intervals → below min-sample.
+    document.querySelector('.btn-option[data-mode="time"]').click();
+    document.getElementById('startBtn').click();
+    const word = state.currentWord;
+    for (let i = 1; i <= Math.min(3, word.length); i++)
+      type(word.slice(0, i), word);
+    vi.advanceTimersByTime(60000);
+
+    expect(state.isRunning).toBe(false);
+    expect(document.getElementById('modalConsistency').textContent).toBe('—');
+    const stored = JSON.parse(localStorage.getItem('typesprint:v1:history'));
+    expect(stored[0].consistency).toBeUndefined();
+  });
+
+  it('renders pre-Wave-3 history entries (no consistency field) as an em dash', async () => {
+    localStorage.setItem(
+      'typesprint:v1:history',
+      JSON.stringify([
+        {
+          date: '2026-07-01T10:00:00.000Z',
+          wpm: 64,
+          rawWPM: 70,
+          accuracy: 91,
+          time: 60,
+          errors: 6,
+          mode: 'word',
+          difficulty: 'medium',
+        },
+      ])
+    );
+    await bootApp();
+    const items = document.querySelectorAll(
+      '#historyList .history-item:not(:first-child)'
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toContain('—');
+  });
+});
+
 describe('results modal focus management (a11y wave-2)', () => {
   async function completeWordTest() {
     const { state } = await bootApp();

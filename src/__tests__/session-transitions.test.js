@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeInputDelta,
   extractKeystroke,
+  buildStrike,
   isTimedMode,
   WORD_MODE_TARGET,
 } from '../session.js';
@@ -146,6 +147,72 @@ describe('extractKeystroke', () => {
 
   it('ignores typing past the end of the target', () => {
     expect(extractKeystroke('cats', 'cat', 3)).toBeNull();
+  });
+});
+
+describe('buildStrike — timestamped strike records (input pipeline v2)', () => {
+  // A "strike" is one input event that reaches new positions of the target.
+  // It mirrors computeInputDelta's first-strike semantics exactly: events
+  // that score nothing (backspaces, retypes of corrected ground) produce no
+  // strike, so the strike log is the timestamp side of the same scoring.
+
+  it('records a single forward correct keystroke', () => {
+    expect(buildStrike('c', 'cat', 0, 150, 0)).toEqual({
+      t: 150,
+      seg: 0,
+      pos: 0,
+      span: 1,
+      keys: [{ key: 'c', correct: true }],
+    });
+  });
+
+  it('records a single forward wrong keystroke', () => {
+    expect(buildStrike('cx', 'cat', 1, 320, 2)).toEqual({
+      t: 320,
+      seg: 2,
+      pos: 1,
+      span: 1,
+      keys: [{ key: 'a', correct: false }],
+    });
+  });
+
+  it('returns null for backspaces and cleared input (correction events)', () => {
+    expect(buildStrike('ca', 'cat', 3, 100, 0)).toBeNull();
+    expect(buildStrike('', 'cat', 1, 100, 0)).toBeNull();
+  });
+
+  it('returns null for a retype of already-scored ground (no re-strike)', () => {
+    expect(buildStrike('c', 'cat', 1, 100, 0)).toBeNull();
+  });
+
+  it('records a multi-char forward jump (paste / IME commit) as ONE strike', () => {
+    expect(buildStrike('cat', 'cat', 0, 500, 0)).toEqual({
+      t: 500,
+      seg: 0,
+      pos: 0,
+      span: 3,
+      keys: [
+        { key: 'c', correct: true },
+        { key: 'a', correct: true },
+        { key: 't', correct: true },
+      ],
+    });
+  });
+
+  it('counts overflow positions in span but never keys them (no target char)', () => {
+    expect(buildStrike('catzz', 'cat', 3, 900, 0)).toEqual({
+      t: 900,
+      seg: 0,
+      pos: 3,
+      span: 2,
+      keys: [],
+    });
+  });
+
+  it('keys a mixed jump only for in-target positions', () => {
+    const strike = buildStrike('cats', 'cat', 2, 700, 1);
+    expect(strike.span).toBe(2);
+    expect(strike.keys).toEqual([{ key: 't', correct: true }]);
   });
 });
 

@@ -60,6 +60,12 @@ export function sanitizeHistoryEntry(raw) {
   // Preserve the metrics-v2 tag (literal 2 only); absence marks a pre-v2
   // entry measured with the inflated legacy counting.
   if (raw.metricsVersion === 2) entry.metricsVersion = 2;
+  // Preserve a finite consistency score (Wave 3). Absence is meaningful —
+  // pre-Wave-3 entries and too-short samples render as "—" — so junk is
+  // dropped rather than defaulted.
+  if (typeof raw.consistency === 'number' && Number.isFinite(raw.consistency)) {
+    entry.consistency = Math.round(Math.max(0, Math.min(100, raw.consistency)));
+  }
   return entry;
 }
 

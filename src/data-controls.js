@@ -8,6 +8,7 @@ import { el, showMessage } from './ui.js';
 import { exportAll, importAll, clearAll } from './lib/storage.js';
 import {
   LEGACY_KEYS,
+  getHistoryLimit,
   loadPersistedData,
   updateStatsDisplay,
   renderHistory,
@@ -67,7 +68,7 @@ export function sanitizeImportPayload(payload) {
     clean.history = data.history
       .map((entry) => sanitizeHistoryEntry(entry))
       .filter(Boolean)
-      .slice(0, 100);
+      .slice(0, getHistoryLimit());
   }
   if (data.stats) clean.stats = sanitizeStats(data.stats);
   if (data.perKey) clean.perKey = sanitizePerKey(data.perKey);

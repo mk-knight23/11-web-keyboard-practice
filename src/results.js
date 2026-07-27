@@ -4,7 +4,11 @@
  */
 import { el } from './ui.js';
 import { track } from './analytics.js';
-import { summarizeTest, METRICS_VERSION } from './lib/typing-metrics.js';
+import {
+  summarizeTest,
+  strikeIntervalsMs,
+  METRICS_VERSION,
+} from './lib/typing-metrics.js';
 import {
   getStats,
   saveStats,
@@ -14,6 +18,7 @@ import {
 } from './history.js';
 import { state, stopTimer } from './session.js';
 import { recordSessionPerKey, renderHeatmap } from './heatmap.js';
+import { recordSessionLatency } from './latency.js';
 import { renderDashboard } from './dashboard.js';
 import { activateFocusTrap, deactivateFocusTrap } from './lib/focus-trap.js';
 
@@ -48,6 +53,7 @@ export function endTest() {
     elapsedSec,
     errors: state.errors,
     keystrokes: state.keystrokes,
+    intervalsMs: strikeIntervalsMs(state.strikes),
   });
 
   // Personal best check
@@ -60,6 +66,8 @@ export function endTest() {
 
   // History entry — tagged with the metrics version that produced it so
   // v2 results are distinguishable from pre-fix (inflated) entries.
+  // consistency is only stored when the sample was large enough for an
+  // honest score (null = too short → field omitted, rendered as "—").
   addHistoryEntry({
     date: new Date().toISOString(),
     wpm: summary.netWpm,
@@ -70,6 +78,9 @@ export function endTest() {
     mode: state.mode,
     difficulty: state.difficulty,
     metricsVersion: METRICS_VERSION,
+    ...(summary.consistency !== null && {
+      consistency: summary.consistency,
+    }),
   });
 
   updateStatsDisplay();
@@ -77,6 +88,9 @@ export function endTest() {
 
   // Aggregate this session's per-key stats and refresh the visualizations.
   recordSessionPerKey(summary.perKey);
+  // Data layer only (Wave 3): per-key/bigram latency for the Wave 4
+  // adaptive engine — no UI reads these yet.
+  recordSessionLatency(state.strikes);
   renderHeatmap();
   renderDashboard();
 
@@ -85,6 +99,10 @@ export function endTest() {
   el.modalRawWPM.textContent = summary.rawWpm;
   el.modalAccuracy.textContent = summary.accuracy + '%';
   el.modalErrors.textContent = state.errors;
+  if (el.modalConsistency) {
+    el.modalConsistency.textContent =
+      summary.consistency === null ? '—' : summary.consistency + '%';
+  }
   el.modalPersonalBest.classList.toggle('show', isPersonalBest);
 
   el.wordInput.disabled = true;
