@@ -12,6 +12,39 @@ import { openHistoryDb, idbGetHistory, idbPutHistory } from './history-db.js';
 const NAMESPACE = 'typesprint';
 const SCHEMA_VERSION = 1;
 
+/**
+ * MK family keys (V3 design system: `mk.<product>.<domain>.v<N>`), stored
+ * as RAW strings — not JSON — to match the family theme-engine contract
+ * shared with the first-paint boot script (public/theme-boot.js).
+ */
+const MK_PREFIX = 'mk.typesprint.';
+export const MK_KEYS = Object.freeze({
+  THEME: `${MK_PREFIX}theme.v1`,
+  MOTION: `${MK_PREFIX}motion.v1`,
+  TRANSPARENCY: `${MK_PREFIX}transparency.v1`,
+});
+
+/** Raw (non-JSON, non-namespaced) read for the mk.* family keys. */
+export function readRaw(storageKey) {
+  if (!isBrowser()) return null;
+  try {
+    return localStorage.getItem(storageKey);
+  } catch {
+    return null;
+  }
+}
+
+/** Raw (non-JSON, non-namespaced) write for the mk.* family keys. */
+export function writeRaw(storageKey, value) {
+  if (!isBrowser()) return false;
+  try {
+    localStorage.setItem(storageKey, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function key(name) {
   return `${NAMESPACE}:v${SCHEMA_VERSION}:${name}`;
 }
@@ -61,7 +94,8 @@ export function clearAll() {
       const keys = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith(prefix)) keys.push(k);
+        if (k && (k.startsWith(prefix) || k.startsWith(MK_PREFIX)))
+          keys.push(k);
       }
       for (const k of keys) localStorage.removeItem(k);
     } catch {
@@ -92,6 +126,10 @@ export function exportAll() {
   if (historyStore.backend === 'indexeddb') {
     data[STORAGE_KEYS.HISTORY] = readHistory();
   }
+  // The theme preference lives under the mk.* family key since V3; export
+  // it under the same `theme` name so old and new backups stay compatible.
+  const mkTheme = readRaw(MK_KEYS.THEME);
+  if (mkTheme !== null) data[STORAGE_KEYS.THEME] = mkTheme;
   return { version: SCHEMA_VERSION, data };
 }
 
@@ -106,6 +144,12 @@ export function importAll(payload) {
       // plain synchronous write under the fallback backend.
       if (name === STORAGE_KEYS.HISTORY) {
         persistHistory(value);
+        continue;
+      }
+      // Theme routes to its V3 home (raw string under the mk.* family key)
+      // so an imported preference actually drives the engine.
+      if (name === STORAGE_KEYS.THEME && typeof value === 'string') {
+        writeRaw(MK_KEYS.THEME, value);
         continue;
       }
       write(name, value);
