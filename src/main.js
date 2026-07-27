@@ -2,8 +2,10 @@
  * App orchestrator — wires DOM events to the session, results, history,
  * and theme modules. This is the only module with top-level side effects.
  */
-import { initElements, el, showSection } from './ui.js';
-import { initTheme, toggleTheme } from './theme.js';
+import { initElements, el, showSection, scrollBehavior } from './ui.js';
+import { initTheme } from './theme.js';
+import { initZen, isZen, setZen, toggleZen } from './zen.js';
+import { initNavMenu } from './nav-menu.js';
 import {
   state,
   startTest,
@@ -21,7 +23,11 @@ import {
   initHistoryStore,
   setHistoryWriteErrorHandler,
 } from './lib/storage.js';
-import { shouldStartOnSpace, shouldAbortOnEscape } from './keyboard.js';
+import {
+  shouldStartOnSpace,
+  shouldAbortOnEscape,
+  isEditableTarget,
+} from './keyboard.js';
 import { getWeakPracticeWord, updateWeakKeyExplainer } from './practice.js';
 import { renderHeatmap } from './heatmap.js';
 import { renderDashboard } from './dashboard.js';
@@ -92,10 +98,9 @@ el.historyList.addEventListener('click', (e) => {
 
 el.heroCta.addEventListener('click', () => {
   el.startBtn.click();
-  el.wordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.wordInput.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 });
 
-el.themeToggle.addEventListener('click', toggleTheme);
 el.difficulty.addEventListener('change', (e) => {
   state.difficulty = e.target.value;
 });
@@ -163,7 +168,14 @@ el.resultsModal.addEventListener('click', (e) => {
   if (e.target === el.resultsModal) hideResultsModal();
 });
 
-document.addEventListener('keydown', (e) => {
+// Idempotent registration: bootstrapping twice (dev HMR, test re-boots via
+// vi.resetModules) must not stack document-level handlers — zen acts on the
+// shared <html> element, so a stale duplicate handler would double-toggle.
+const KEYDOWN_HANDLER_KEY = '__typesprintKeydownHandler';
+if (document[KEYDOWN_HANDLER_KEY]) {
+  document.removeEventListener('keydown', document[KEYDOWN_HANDLER_KEY]);
+}
+const onDocumentKeydown = (e) => {
   if (e.key === 'Escape') {
     // Priority 1: close the results modal if it is open.
     if (el.resultsModal.classList.contains('show')) {
@@ -176,6 +188,25 @@ document.addEventListener('keydown', (e) => {
       resetGame();
       return;
     }
+    // Priority 3: exit zen mode (see src/zen.js for the full contract).
+    if (isZen()) {
+      setZen(false);
+      return;
+    }
+  }
+  // Z toggles zen only when focus is NOT on an editable target — during an
+  // active test focus lives in the typing input, so "z" is just a letter.
+  // Also inert while the results modal is open (it owns focus).
+  if (
+    (e.key === 'z' || e.key === 'Z') &&
+    !e.metaKey &&
+    !e.ctrlKey &&
+    !e.altKey &&
+    !isEditableTarget(document.activeElement) &&
+    !el.resultsModal.classList.contains('show')
+  ) {
+    toggleZen();
+    return;
   }
   // Space starts a test only when no control/input is focused (WCAG 2.1.1).
   if (
@@ -189,13 +220,18 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     startTest();
   }
-});
+};
+document[KEYDOWN_HANDLER_KEY] = onDocumentKeydown;
+document.addEventListener('keydown', onDocumentKeydown);
 
 /* ============================================
    Init
    ============================================ */
 initDataControls();
 initTheme();
+// Entering zen always lands on the test — never a blanked-out About page.
+initZen({ onEnter: () => showSection('main') });
+initNavMenu();
 updateStatsDisplay();
 renderHistory();
 renderHeatmap();
